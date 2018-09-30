@@ -2,19 +2,17 @@ import Vapor
 
 /// Register your application's routes here.
 public func routes(_ router: Router) throws {
-  // Basic "It works" example
-  router.get { req in
-    return "It works!"
-  }
-  
-  // Basic "Hello, world!" example
-  router.get("hello") { req in
-    return "Hello, world!"
-  }
   
   let userController = UserController()
+  let debtController = DebtController()
   
   router.post("register", use: userController.create)
   router.post("authenticate", use: userController.login)
   
+  let bearerUser = router.grouped(User.tokenAuthMiddleware())
+  bearerUser.get("profile", use: userController.profile)
+  bearerUser.get("logout", use: userController.logout)
+  
+  let bearerDebt = router.grouped(User.tokenAuthMiddleware())
+  bearerDebt.post("debts", use: debtController.create)
 }

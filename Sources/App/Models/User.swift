@@ -46,10 +46,12 @@ final class User: PostgreSQLModel {
 struct UserJWT: JWTPayload {
   var id: Int
   var userName: String
+  var issuedAt: Date
   
   init(id: Int, userName: String) {
     self.id = id
     self.userName = userName
+    self.issuedAt = Date()
   }
   func verify(using signer: JWTSigner) throws {
     // nothing to verify

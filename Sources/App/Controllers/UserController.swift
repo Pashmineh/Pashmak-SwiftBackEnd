@@ -26,7 +26,7 @@ final class UserController {
           .unwrap(or: Abort(.notFound))
           .flatMap(to: UserToken.self) { foundUser in
             tempUser = foundUser
-            let passwordhash = try BCrypt.hash(loginInfo.password)
+            let passwordhash = try MD5.hash(loginInfo.password).base64EncodedString()
             if foundUser.passwordHash == passwordhash {
               let userPayload: UserJWT = UserJWT(id: foundUser.id ?? 0, userName: foundUser.userName)
               let token = try UserToken.createJWTToken(user: userPayload)
@@ -35,8 +35,8 @@ final class UserController {
               throw Abort(HTTPResponseStatus.forbidden)
             }
           }
-          .flatMap(to: LoginResponse.self) { savedToken in
-            return req.future(LoginResponse(name: tempUser?.firstName ?? "", lastName: tempUser?.lastName ?? "", token: savedToken.string, avatar: tempUser?.avatar ?? ""))
+          .map(to: LoginResponse.self) { savedToken in
+            return LoginResponse(name: tempUser?.firstName ?? "", lastName: tempUser?.lastName ?? "", token: savedToken.string, avatar: tempUser?.avatar ?? "")
         }
       }
   }
@@ -45,9 +45,8 @@ final class UserController {
   func create(_ req: Request) throws -> Future<LoginResponse> {
     
     return try req.content.decode(CreateUserRequest.self)
-      
       .flatMap(to: User.self) { user -> Future<User> in
-        let paswordHash = try BCrypt.hash(user.password)
+        let paswordHash = try MD5.hash(user.password).base64EncodedString()
         return User(id: nil,
                     userName: user.userName,
                     passwordHash: paswordHash,
