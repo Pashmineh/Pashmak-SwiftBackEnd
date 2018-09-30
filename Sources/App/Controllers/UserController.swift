@@ -12,27 +12,52 @@ import FluentPostgreSQL
 /// Creates new users and logs them in.
 final class UserController {
   
+  
   /// Logs a user in, returning a token for accessing protected endpoints.
-  func login(_ req: Request) throws -> Future<UserToken> {
-
-    let user = try req.content.decode(LoginRequest.self).map(to: <#T##T.Type#>, <#T##callback: (LoginRequest) throws -> T##(LoginRequest) throws -> T#>)
-    
-    let user = try req.requireAuthenticated(User.self)
-    let userPayload: UserJWT = UserJWT(id: user.id!, userName: user.userName)
-    let token = try UserToken.createJWTToken(user: userPayload)
-    
-    return token.save(on: req)
-    
+  func login(_ req: Request) throws -> Future<LoginResponse> {
+   
+    var tempUser: User?
+    return try req.content.decode(LoginRequest.self)
+      .flatMap(to: LoginResponse.self) { loginInfo in
+        return User
+          .query(on: req)
+          .filter(\User.userName, .equal, loginInfo.username)
+          .first()
+          .unwrap(or: Abort(.notFound))
+          .flatMap(to: UserToken.self) { foundUser in
+            tempUser = foundUser
+            let passwordhash = try BCrypt.hash(loginInfo.password)
+            if foundUser.passwordHash == passwordhash {
+              let userPayload: UserJWT = UserJWT(id: foundUser.id ?? 0, userName: foundUser.userName)
+              let token = try UserToken.createJWTToken(user: userPayload)
+              return token.save(on: req)
+            } else {
+              throw Abort(HTTPResponseStatus.forbidden)
+            }
+          }
+          .flatMap(to: LoginResponse.self) { savedToken in
+            return req.future(LoginResponse(name: tempUser?.firstName ?? "", lastName: tempUser?.lastName ?? "", token: savedToken.string, avatar: tempUser?.avatar ?? ""))
+        }
+      }
   }
   
   /// Creates a new user.
   func create(_ req: Request) throws -> Future<LoginResponse> {
     
-    return try req.content.decode(LoginRequest.self)
+    return try req.content.decode(CreateUserRequest.self)
       
       .flatMap(to: User.self) { user -> Future<User> in
         let paswordHash = try BCrypt.hash(user.password)
-        return User(id: nil, userName: user.username, passwordHash: paswordHash, firstName: "", lastName: "", pushToken: user.pushToken, platform: "", avatar: "").save(on: req)
+        return User(id: nil,
+                    userName: user.userName,
+                    passwordHash: paswordHash,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    pushToken: user.pushToken,
+                    platform: user.platform,
+                    avatar: user.avatar,
+                    deviceID: user.deviceID)
+          .save(on: req)
       }
       
       .map(to: LoginResponse.self) { userResponse in
@@ -64,7 +89,7 @@ final class UserController {
 
 // MARK: Content
 
-/// Data required to create a user.
+/// Data required to Loging in a user.
 struct LoginRequest: Content {
 
   var username: String
@@ -83,4 +108,16 @@ struct LoginResponse: Content {
   var token: String
   var avatar: String
   
+}
+
+// Data Required to create a User
+struct CreateUserRequest: Content {
+  var userName: String
+  var password: String
+  var firstName: String
+  var lastName: String
+  var pushToken: String
+  var platform: String
+  var avatar: String
+  var deviceID: String
 }

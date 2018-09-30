@@ -25,11 +25,12 @@ final class User: PostgreSQLModel {
   var pushToken: String
   var platform: String
   var avatar: String
+  var deviceID: String
   
   static let entity = "User"
   
   /// Creates a new `User`.
-  init(id: Int? = nil, userName: String, passwordHash: String, firstName: String, lastName: String, pushToken: String, platform: String, avatar: String) {
+  init(id: Int? = nil, userName: String, passwordHash: String, firstName: String, lastName: String, pushToken: String, platform: String, avatar: String, deviceID: String) {
     self.id = id
     self.userName = userName
     self.passwordHash = passwordHash
@@ -38,6 +39,7 @@ final class User: PostgreSQLModel {
     self.pushToken = pushToken
     self.platform = platform
     self.avatar = avatar
+    self.deviceID = deviceID
   }
 }
 
