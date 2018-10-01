@@ -8,6 +8,7 @@
 import Crypto
 import Vapor
 import FluentPostgreSQL
+import Redis
 
 /// Creates new users and logs them in.
 final class UserController {
@@ -42,11 +43,12 @@ final class UserController {
   }
   
   /// Creates a new user.
-  func create(_ req: Request) throws -> Future<LoginResponse> {
+  func create(_ req: Request) throws -> Future<HTTPResponse> {
     
     return try req.content.decode(CreateUserRequest.self)
       .flatMap(to: User.self) { user -> Future<User> in
         let paswordHash = try MD5.hash(user.password).base64EncodedString()
+        try user.validate()
         return User(id: nil,
                     userName: user.userName,
                     passwordHash: paswordHash,
@@ -58,9 +60,8 @@ final class UserController {
                     deviceID: user.deviceID)
           .save(on: req)
       }
-      
-      .map(to: LoginResponse.self) { userResponse in
-        return LoginResponse(name: "", lastName: "", token: "", avatar: "")
+      .map(to: HTTPResponse.self) { userResponse in
+        return HTTPResponse(status: .created, body: "User Created")
     }
     
   }
@@ -79,6 +80,15 @@ final class UserController {
       .filter(\UserToken.userID, .equal, user.requireID())
       .delete()
       .transform(to: HTTPResponse(status: .ok))
+  }
+  
+  // Test Redis Functionality
+  func redis(_ req: Request) throws -> Future<String> {
+    return req.withNewConnection(to: .redis) { redis in
+      return redis.get("test", as: String.self).map {
+        $0 ?? ""
+      }
+    }
   }
   
 
@@ -110,7 +120,7 @@ struct LoginResponse: Content {
 }
 
 // Data Required to create a User
-struct CreateUserRequest: Content {
+struct CreateUserRequest: Content, Reflectable {
   var userName: String
   var password: String
   var firstName: String
@@ -119,4 +129,14 @@ struct CreateUserRequest: Content {
   var platform: String
   var avatar: String
   var deviceID: String
+}
+
+extension CreateUserRequest: Validatable {
+  static func validations() throws -> Validations<CreateUserRequest> {
+    var validations = Validations(CreateUserRequest.self)
+    try validations.add(\.userName, .count(3...))
+    return validations
+  }
+  
+  
 }

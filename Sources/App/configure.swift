@@ -1,3 +1,4 @@
+import Redis
 import Vapor
 import FluentPostgreSQL
 import Authentication
@@ -7,6 +8,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   
   try services.register(FluentPostgreSQLProvider())
   try services.register(AuthenticationProvider())
+//  try services.register(RedisProvider())
   
   /// Register routes to the router
   let router = EngineRouter.default()
@@ -30,6 +32,12 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
                                                                      transport: PostgreSQLConnection.TransportConfig.cleartext))
   
   databases.add(database: postgres, as: .psql)
+  
+  // Redis
+  let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: "localhost:6379")!))
+  databases.add(database: redis, as: .redis)
+  
+  
   services.register(databases)
   
   var migrations = MigrationConfig()

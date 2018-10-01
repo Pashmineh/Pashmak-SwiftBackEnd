@@ -11,8 +11,10 @@ public func routes(_ router: Router) throws {
   
   let bearerUser = router.grouped(User.tokenAuthMiddleware())
   bearerUser.get("profile", use: userController.profile)
+  bearerUser.get("redis", use: userController.redis)
   bearerUser.get("logout", use: userController.logout)
   
   let bearerDebt = router.grouped(User.tokenAuthMiddleware())
   bearerDebt.post("debts", use: debtController.create)
+  
 }

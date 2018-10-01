@@ -17,10 +17,12 @@ let package = Package(
     // 🖋🐘 Swift ORM (queries, models, relations, etc) built on PostgreSQL.
     .package(url: "https://github.com/vapor/fluent-postgresql.git", from: "1.0.0"),
     
+    // ⚡️Non-blocking, event-driven Redis client.
+    .package(url: "https://github.com/vapor/redis.git", from: "3.0.0"),
     
     ],
   targets: [
-    .target(name: "App", dependencies: ["Vapor", "Authentication", "JWT", "FluentPostgreSQL"]),
+    .target(name: "App", dependencies: ["Vapor", "Authentication", "JWT", "FluentPostgreSQL", "Redis"]),
     .target(name: "Run", dependencies: ["App"]),
     .testTarget(name: "AppTests", dependencies: ["App"])
   ]

@@ -77,6 +77,16 @@ extension User: TokenAuthenticatable {
   typealias TokenType = UserToken
 }
 
+/// Validation User Inputs
+extension User: Validatable {
+  static func validations() throws -> Validations<User> {
+    var validations = Validations(User.self)
+    try validations.add(\.userName, .count(3...))
+    return validations
+  }
+  
+  
+}
 
 /// Allows `User` to be encoded to and decoded from HTTP messages.
 extension User: Content { }
