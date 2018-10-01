@@ -16,5 +16,12 @@ public func routes(_ router: Router) throws {
   
   let bearerDebt = router.grouped(User.tokenAuthMiddleware())
   bearerDebt.post("debts", use: debtController.create)
+
+  // MARK: - Checkin
+  let checkinController = CheckinController()
+  let bearerCheckin = router.grouped(User.tokenAuthMiddleware())
+  bearerCheckin.post("checkin", use: checkinController.create)
+  bearerCheckin.get("checkins", use: checkinController.getAll)
+  bearerCheckin.get("checkin", Checkin.parameter, use: checkinController.getCheckin)
   
 }
