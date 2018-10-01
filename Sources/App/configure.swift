@@ -24,7 +24,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   var databases = DatabasesConfig()
   
   // PostgreSQL
-  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: "localhost",
+  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: "192.168.60.4",
                                                                      port: 5432,
                                                                      username: "postgres",
                                                                      database: nil,
