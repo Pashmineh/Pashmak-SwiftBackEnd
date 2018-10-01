@@ -5,6 +5,7 @@ public func routes(_ router: Router) throws {
 
   let userController = UserController()
   let debtController = DebtController()
+  let eventController = EventController()
   
   router.post("register", use: userController.create)
   router.post("authenticate", use: userController.login)
@@ -17,4 +18,6 @@ public func routes(_ router: Router) throws {
   let bearerDebt = router.grouped(User.tokenAuthMiddleware())
   bearerDebt.post("debts", use: debtController.create)
   
+  let bearerEvent = router.grouped(User.tokenAuthMiddleware())
+  bearerEvent.post("event", use: eventController.create)
 }
