@@ -13,12 +13,19 @@ import FluentPostgreSQL
 final class DebtController {
   
   func create(_ req: Request) throws -> Future<Debt> {
-    let user = try req.requireAuthenticated(User.self)
     return try req.content.decode(CreateDebtRequest.self).flatMap(to: Debt.self) { createRequest in
-      return try Debt(amount: createRequest.amount, paymentTime: createRequest.paymentTime, reason: createRequest.reason, userId: user.requireID(), userLogin: "").save(on: req)
+      return try self.insertDebt(req, reason: createRequest.reason, amount: createRequest.amount)
     }
   }
   
+  func insertDebt(_ req: Request, reason: Debt.Reason, amount: UInt64 = 0) throws -> Future<Debt> {
+    let user = try req.requireAuthenticated(User.self)
+    return try Debt(amount: amount == 0 ? reason.amount : amount,
+                    paymentTime: Date(),
+                    reason: reason,
+                    userId: user.requireID())
+      .save(on: req)
+  }
 }
 
 // MARK: Content
@@ -26,6 +33,5 @@ final class DebtController {
 // Data Required to create a Debt
 struct CreateDebtRequest: Content {
   var amount: UInt64
-  var paymentTime: String
   var reason: Debt.Reason
 }

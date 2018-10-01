@@ -17,24 +17,32 @@ final class Debt: PostgreSQLModel {
   var id: Int?
   
   var amount: UInt64
-  var paymentTime: String
+  var paymentTime: Date
   var reason: String
   var userId: Int
-  var userLogin: String
   
   enum Reason: String, Codable {
     case TAKHIR
     case SHIRINI
     case JALASE
+    var amount: UInt64 {
+      switch self {
+      case .JALASE:
+        return 50000
+      case .SHIRINI:
+        return 500000
+      case .TAKHIR:
+        return 50000
+      }
+    }
   }
   
-  init(id: Int? = nil, amount: UInt64, paymentTime: String, reason: Reason, userId: Int, userLogin: String) {
+  init(id: Int? = nil, amount: UInt64, paymentTime: Date, reason: Reason, userId: Int) {
     self.id = id
     self.amount = amount
     self.paymentTime = paymentTime
     self.reason = reason.rawValue
     self.userId = userId
-    self.userLogin = userLogin
   }
   
 }

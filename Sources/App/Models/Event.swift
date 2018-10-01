@@ -19,7 +19,7 @@ final class Event: PostgreSQLModel {
   var name: String
   var description: String
   var location: String
-  var eventTime: String
+  var eventTime: Date
   var eventTimeEpoch: Double
   
   
@@ -29,7 +29,7 @@ final class Event: PostgreSQLModel {
        name: String,
        description: String,
        location: String,
-       eventTime: String,
+       eventTime: Date,
        eventTimeEpoch: Double) {
     
     self.id = id
@@ -42,3 +42,13 @@ final class Event: PostgreSQLModel {
   }
   
 }
+
+
+/// Allows `Event` to be encoded to and decoded from HTTP messages.
+extension Event: Content { }
+
+/// Allows `Event` to be Migrated
+extension Event: Migration { }
+
+/// Allows `Event` to be used as a dynamic parameter in route definitions.
+extension Event: Parameter { }
