@@ -82,7 +82,14 @@ enum TransactionController {
                 print("Could not send update push.")
               }
 
+            }.always {
+              do {
+                try user.updateBalance(req)
+              } catch {
+                print("Error updating balance")
+              }
             }
+
         }
     }
   }

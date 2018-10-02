@@ -144,11 +144,21 @@ extension Models.User: Validatable {
 }
 
 extension Models.User {
+  @discardableResult
   func updateBalance(_ req: Request) throws -> Future<Models.User.Public> {
     return try self.transactions.query(on: req).filter(\.isValid == true).all().flatMap(to: Models.User.Public.self) { transactions in
       let balance: Int64 = transactions.reduce(0) { $0 + $1.amount }
       self.balance = balance
       return self.save(on: req).map(to: Models.User.Public.self) { return $0.convertToPublic()}
+        .do { _ in
+          let msg = PushService.UpdateMessage()
+          do {
+            try PushService.shared.send(message: msg, to: [self] , on: req)
+          } catch {
+            print("error sending balance update push.\n\(error.localizedDescription)")
+          }
+
+      }
     }
   }
 }
