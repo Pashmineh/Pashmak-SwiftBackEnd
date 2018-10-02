@@ -17,20 +17,20 @@ final class UserController {
   /// Logs a user in, returning a token for accessing protected endpoints.
   func login(_ req: Request) throws -> Future<LoginResponse> {
    
-    var tempUser: User?
+    var tempUser: Models.User?
     return try req.content.decode(LoginRequest.self)
       .flatMap(to: LoginResponse.self) { loginInfo in
-        return User
+        return Models.User
           .query(on: req)
-          .filter(\User.userName, .equal, loginInfo.username)
+          .filter(\Models.User.phoneNumber, .equal, loginInfo.username)
           .first()
           .unwrap(or: Abort(.notFound))
           .flatMap(to: UserToken.self) { foundUser in
             tempUser = foundUser
             let passwordhash = try MD5.hash(loginInfo.password).base64EncodedString()
             if foundUser.passwordHash == passwordhash {
-              let userPayload: UserJWT = UserJWT(id: foundUser.id ?? 0, userName: foundUser.userName)
-              let token = try UserToken.createJWTToken(user: userPayload)
+              let userPayload: Models.User.JWT = Models.User.JWT(id: foundUser.id ?? UUID(), phoneNumber: foundUser.phoneNumber)
+              let token = try UserToken.createJWTToken(payload: userPayload)
               return token.save(on: req)
             } else {
               throw Abort(HTTPResponseStatus.forbidden)
@@ -46,18 +46,17 @@ final class UserController {
   func create(_ req: Request) throws -> Future<HTTPResponse> {
     
     return try req.content.decode(CreateUserRequest.self)
-      .flatMap(to: User.self) { user -> Future<User> in
+      .flatMap(to: Models.User.self) { user -> Future<Models.User> in
         let paswordHash = try MD5.hash(user.password).base64EncodedString()
         try user.validate()
-        return User(id: nil,
-                    userName: user.userName,
-                    passwordHash: paswordHash,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    pushToken: user.pushToken,
-                    platform: user.platform,
-                    avatar: user.avatar,
-                    deviceID: user.deviceID)
+        return Models.User(phoneNumber: user.userName,
+                           passwordHash: paswordHash,
+                           firstName: user.firstName,
+                           lastName: user.lastName,
+                           pushToken: user.pushToken,
+                           platform: user.platform,
+                           avatar: user.avatar,
+                           deviceID: user.deviceID)
           .save(on: req)
       }
       .map(to: HTTPResponse.self) { userResponse in
@@ -68,13 +67,13 @@ final class UserController {
   
   // Get User Profile
   func profile(_ req: Request) throws -> Future<String> {
-    let user = try req.requireAuthenticated(User.self)
-    return req.future("Welcome \(user.userName)")
+    let user = try req.requireAuthenticated(Models.User.self)
+    return req.future("Welcome \(user.phoneNumber)")
   }
   
   // Sign Out Request
   func logout(_ req: Request) throws -> Future<HTTPResponse> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     return try UserToken
       .query(on: req)
       .filter(\UserToken.userID, .equal, user.requireID())

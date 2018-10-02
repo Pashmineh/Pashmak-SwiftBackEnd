@@ -34,9 +34,9 @@ final class Checkin: PostgreSQLModel {
   var checkinTime: Date
   var checkinType: String
 
-  var userId: Int
+  var userId: Models.User.ID
 
-  init(id: Int? = nil, checkinTime: Date, checkinType: CheckinType, userId: Int) {
+  init(id: Int? = nil, checkinTime: Date, checkinType: CheckinType, userId: UUID) {
     self.id = id
     self.checkinTime = checkinTime
     self.checkinType = checkinType.rawValue

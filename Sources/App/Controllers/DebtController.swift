@@ -19,7 +19,7 @@ final class DebtController {
   }
   
   func insertDebt(_ req: Request, reason: Debt.Reason, amount: UInt64 = 0) throws -> Future<Debt> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     return try Debt(amount: amount == 0 ? reason.amount : amount,
                     paymentTime: Date(),
                     reason: reason,

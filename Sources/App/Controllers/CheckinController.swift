@@ -12,7 +12,7 @@ import SwiftDate
 final class CheckinController {
   
   func create(_ req: Request) throws -> Future<HTTPStatus> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     let userID = try user.requireID()
 
     
@@ -27,7 +27,7 @@ final class CheckinController {
   }
 
   func isCheckinReported(_ req: Request) throws -> Future<Bool> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     let userID = try user.requireID()
     var todayComponents = Date().dateComponents
     todayComponents.setValue(0, for: Calendar.Component.hour)
@@ -42,7 +42,7 @@ final class CheckinController {
   }
 
   func getAll(_ req: Request) throws -> Future<[CheckinResponse]> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     return try Checkin.query(on: req).filter(\.userId == user.requireID()).all().flatMap(to: [CheckinResponse].self) { checkins in
       var result: [CheckinResponse] = []
       checkins.forEach {
@@ -53,7 +53,7 @@ final class CheckinController {
   }
 
   func getCheckin(_ req: Request) throws -> Future<CheckinResponse> {
-    let user = try req.requireAuthenticated(User.self)
+    let user = try req.requireAuthenticated(Models.User.self)
     return try req.parameters.next(Checkin.self).flatMap(to: CheckinResponse.self) { checkin in
       let userID = try user.requireID()
       if checkin.userId != userID {
@@ -79,5 +79,5 @@ struct CheckinResponse: Content {
   var checkinType: Checkin.CheckinType
   var chckinTime: Double
   var id: Int?
-  var userId: Int
+  var userId: Models.User.ID
 }

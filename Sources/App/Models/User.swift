@@ -10,15 +10,18 @@ import FluentPostgreSQL
 import Vapor
 import JWT
 
+extension Models {
+  
+
 /// A registered user, capable of owning todo items.
-final class User: PostgreSQLModel {
+final class User: PostgreSQLUUIDModel {
   
   
   /// User's unique identifier.
   /// Can be `nil` if the user has not been saved yet.
-  var id: Int?
+  var id: UUID?
   
-  var userName: String
+  var phoneNumber: String
   var passwordHash: String
   var firstName: String
   var lastName: String
@@ -30,9 +33,8 @@ final class User: PostgreSQLModel {
   static let entity = "User"
   
   /// Creates a new `User`.
-  init(id: Int? = nil, userName: String, passwordHash: String, firstName: String, lastName: String, pushToken: String, platform: String, avatar: String, deviceID: String) {
-    self.id = id
-    self.userName = userName
+  init(phoneNumber: String, passwordHash: String, firstName: String, lastName: String, pushToken: String, platform: String, avatar: String, deviceID: String) {
+    self.phoneNumber = phoneNumber
     self.passwordHash = passwordHash
     self.firstName = firstName
     self.lastName = lastName
@@ -41,47 +43,49 @@ final class User: PostgreSQLModel {
     self.avatar = avatar
     self.deviceID = deviceID
   }
+  
+  struct JWT: JWTPayload {
+    var id: UUID
+    var phoneNumber: String
+    var issuedAt: Date
+    
+    init(id: UUID, phoneNumber: String) {
+      self.id = id
+      self.phoneNumber = phoneNumber
+      self.issuedAt = Date()
+    }
+    func verify(using signer: JWTSigner) throws {
+      // nothing to verify
+    }
+  }
+}
 }
 
-struct UserJWT: JWTPayload {
-  var id: Int
-  var userName: String
-  var issuedAt: Date
-  
-  init(id: Int, userName: String) {
-    self.id = id
-    self.userName = userName
-    self.issuedAt = Date()
-  }
-  func verify(using signer: JWTSigner) throws {
-    // nothing to verify
-  }
-}
 
 /// Allows users to be verified by basic / password auth middleware.
-extension User: PasswordAuthenticatable {
+extension Models.User: PasswordAuthenticatable {
   /// See `PasswordAuthenticatable`.
-  static var usernameKey: WritableKeyPath<User, String> {
-    return \.userName
+  static var usernameKey: WritableKeyPath<Models.User, String> {
+    return \.phoneNumber
   }
   
   /// See `PasswordAuthenticatable`.
-  static var passwordKey: WritableKeyPath<User, String> {
+  static var passwordKey: WritableKeyPath<Models.User, String> {
     return \.passwordHash
   }
 }
 
 /// Allows users to be verified by bearer / token auth middleware.
-extension User: TokenAuthenticatable {
+extension Models.User: TokenAuthenticatable {
   /// See `TokenAuthenticatable`.
   typealias TokenType = UserToken
 }
 
 /// Validation User Inputs
-extension User: Validatable {
-  static func validations() throws -> Validations<User> {
-    var validations = Validations(User.self)
-    try validations.add(\.userName, .count(3...))
+extension Models.User: Validatable {
+  static func validations() throws -> Validations<Models.User> {
+    var validations = Validations(Models.User.self)
+    try validations.add(\.phoneNumber, .count(3...))
     return validations
   }
   
@@ -89,9 +93,9 @@ extension User: Validatable {
 }
 
 /// Allows `User` to be encoded to and decoded from HTTP messages.
-extension User: Content { }
+extension Models.User: Content { }
 
-extension User: Migration { }
+extension Models.User: Migration { }
 
 /// Allows `User` to be used as a dynamic parameter in route definitions.
-extension User: Parameter { }
+extension Models.User: Parameter { }

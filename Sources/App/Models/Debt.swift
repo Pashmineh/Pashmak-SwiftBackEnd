@@ -19,7 +19,7 @@ final class Debt: PostgreSQLModel {
   var amount: UInt64
   var paymentTime: Date
   var reason: String
-  var userId: Int
+  var userId: Models.User.ID
   
   enum Reason: String, Codable {
     case TAKHIR
@@ -47,7 +47,7 @@ final class Debt: PostgreSQLModel {
     }
   }
   
-  init(id: Int? = nil, amount: UInt64, paymentTime: Date, reason: Reason, userId: Int) {
+  init(id: Int? = nil, amount: UInt64, paymentTime: Date, reason: Reason, userId: UUID) {
     self.id = id
     self.amount = amount
     self.paymentTime = paymentTime

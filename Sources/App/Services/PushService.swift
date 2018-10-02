@@ -12,7 +12,7 @@ private let kPushBaseURL = "178.62.20.28"
 private let kPushBaseURLPort = 8088
 
 protocol GORushConvertibale {
-  func goRushMessage(for users: [User]) -> PushService.GORushMessage
+  func goRushMessage(for users: [Models.User]) -> PushService.GORushMessage
 }
 
 class PushService {
@@ -33,7 +33,7 @@ class PushService {
       self.action = action
     }
 
-    func goRushMessage(for users: [User]) -> GORushMessage {
+    func goRushMessage(for users: [Models.User]) -> GORushMessage {
 
       let iOSTokens: [String] = users.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
       let androidTokens: [String] = users.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
@@ -58,7 +58,7 @@ class PushService {
   }
 
   struct UpdateMessage: GORushConvertibale {
-    func goRushMessage(for users: [User]) -> GORushMessage {
+    func goRushMessage(for users: [Models.User]) -> GORushMessage {
       let iOSTokens: [String] = users.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
       let androidTokens: [String] = users.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
 
@@ -135,7 +135,7 @@ class PushService {
   static let shared: PushService = PushService()
 
   @discardableResult
-  func send(message: GORushConvertibale, to users: [User], on worker: Worker) throws -> Future<Bool> {
+  func send(message: GORushConvertibale, to users: [Models.User], on worker: Worker) throws -> Future<Bool> {
     print("Sending [\(users.count)] messages")
     return HTTPClient.connect(scheme: HTTPScheme.http, hostname: kPushBaseURL, port: kPushBaseURLPort, connectTimeout: TimeAmount.seconds(TimeAmount.Value(exactly: 30.0)!), on: worker) { error in
         print("Error connecting to push server.\n\(error.localizedDescription)")

@@ -12,32 +12,32 @@ import Vapor
 import JWT
 
 /// An ephermal authentication token that identifies a registered user.
-final class UserToken: PostgreSQLModel {
+final class UserToken: PostgreSQLUUIDModel {
   /// Creates a new `UserToken` for a given user.
-  static func create(userID: User.ID) throws -> UserToken {
+  static func create(userID: Models.User.ID) throws -> UserToken {
     // generate a random 128-bit, base64-encoded string.
     let string = try CryptoRandom().generateData(count: 16).base64EncodedString()
     // init a new `UserToken` from that string.
     return .init(string: string, userID: userID)
   }
   
-  static func createJWTToken(user: UserJWT) throws -> UserToken {
-    let data = try JWT(payload: user).sign(using: .hs256(key: "secret"))
+  static func createJWTToken(payload: Models.User.JWT) throws -> UserToken {
+    let data = try JWT(payload: payload).sign(using: .hs256(key: "secret"))
     let string = String(data: data, encoding: .utf8) ?? ""
-    return .init(string: string, userID: user.id)
+    return .init(string: string, userID: payload.id)
   }
   
   /// See `Model`.
   static var deletedAtKey: TimestampKey? { return \.expiresAt }
   
   /// UserToken's unique identifier.
-  var id: Int?
+  var id: UUID?
   
   /// Unique token string.
   var string: String
   
   /// Reference to user that owns this token.
-  var userID: User.ID
+  var userID: Models.User.ID
   
   /// Expiration date. Token will no longer be valid after this point.
   var expiresAt: Date?
@@ -45,8 +45,7 @@ final class UserToken: PostgreSQLModel {
   static let entity = "UserToken"
   
   /// Creates a new `UserToken`.
-  init(id: Int? = nil, string: String, userID: User.ID) {
-    self.id = id
+  init(string: String, userID: Models.User.ID) {
     self.string = string
     // set token to expire after 5 hours
     self.expiresAt = Date.init(timeInterval: 60 * 60 * 5, since: .init())
@@ -56,7 +55,7 @@ final class UserToken: PostgreSQLModel {
 
 extension UserToken {
   /// Fluent relation to the user that owns this token.
-  var user: Parent<UserToken, User> {
+  var user: Parent<UserToken, Models.User> {
     return parent(\.userID)
   }
 }
@@ -64,7 +63,7 @@ extension UserToken {
 /// Allows this model to be used as a TokenAuthenticatable's token.
 extension UserToken: Token {
   /// See `Token`.
-  typealias UserType = User
+  typealias UserType = Models.User
   
   /// See `Token`.
   static var tokenKey: WritableKeyPath<UserToken, String> {
@@ -72,7 +71,7 @@ extension UserToken: Token {
   }
   
   /// See `Token`.
-  static var userIDKey: WritableKeyPath<UserToken, User.ID> {
+  static var userIDKey: WritableKeyPath<UserToken, Models.User.ID> {
     return \.userID
   }
 }
