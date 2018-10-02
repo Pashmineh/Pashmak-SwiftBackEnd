@@ -16,15 +16,15 @@ private let rootPathComponent = "user"
 struct UserRouteCollection: RouteCollection {
   func boot(router: Router) throws {
     let baseRouter = router.grouped(rootPathComponent)
-    let basicGroup = router.grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
+    let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
     let tokenGroup = baseRouter.grouped(Models.User.tokenAuthMiddleware())
-    let openGroup = baseRouter.grouped(rootPathComponent)
+    let openGroup = baseRouter.grouped("/")
     
     // Open
     openGroup.post(Models.User.CreateRequest.self, use: UserController.create)
     
     // Basic APIs
-    basicGroup.post("login", use: UserController.login)
+    basicGroup.post(Models.User.LoginRequest.self, use: UserController.login)
     
     // Token APIs
     tokenGroup.get(rootPathComponent, use: UserController.get)
@@ -50,13 +50,24 @@ enum UserController {
     fatalError("Not implemented")
   }
   
-  static func login(_ req: Request) throws -> Future<UserToken> {
+  static func login(_ req: Request, loginInfo: Models.User.LoginRequest) throws -> Future<UserToken> {
     let user = try req.requireAuthenticated(Models.User.self)
     let userPayload: Models.User.JWT = Models.User.JWT(id: user.id, phoneNumber: user.phoneNumber)
     let token = try UserToken.createJWTToken(payload: userPayload)
-    return token.save(on: req)
+    return try insertOrUpdateDevice(req, loginInfo: loginInfo).flatMap(to: UserToken.self) { _ in
+      return token.save(on: req)
+    }
   }
   
+  static func insertOrUpdateDevice(_ req: Request, loginInfo: Models.User.LoginRequest) throws -> Future<Bool> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    let userID = try user.requireID()
+    return try user.devices.query(on: req).filter(\.installationID == loginInfo.installationID).first().flatMap(to: Bool.self) { device in
+      let dev = device == nil ?
+      loginInfo.device(for: userID) : device!
+      dev.pushToken = loginInfo.pushToken
+      return dev.save(on: req).transform(to: true)
+  }
 }
 
 /// Creates new users and logs them in.
@@ -145,3 +156,4 @@ enum UserController {
 //}
 
 
+}
