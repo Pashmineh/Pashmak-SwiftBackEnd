@@ -48,9 +48,9 @@ enum UserController {
       .transform(to: .ok)
   }
   
-  static func get(_ req: Request) throws -> Models.User {
+  static func get(_ req: Request) throws -> Models.User.Public {
     let user = try req.requireAuthenticated(Models.User.self)
-    return user
+    return user.convertToPublic()
   }
   
   static func logout(_ req: Request) throws -> Future<HTTPStatus> {
