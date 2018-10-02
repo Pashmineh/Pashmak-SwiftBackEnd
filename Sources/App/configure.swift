@@ -24,7 +24,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   var databases = DatabasesConfig()
   
   // PostgreSQL
-  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: "192.168.60.4",
+  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: "178.62.20.28",
                                                                      port: 5432,
                                                                      username: "postgres",
                                                                      database: nil,
@@ -34,7 +34,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   databases.add(database: postgres, as: .psql)
   
   // Redis
-  let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: "localhost:6379")!))
+  let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: "178.62.20.28:6379")!))
   databases.add(database: redis, as: .redis)
   
   
