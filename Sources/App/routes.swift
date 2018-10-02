@@ -27,4 +27,6 @@ public func routes(_ router: Router) throws {
   
   let bearerEvent = router.grouped(User.tokenAuthMiddleware())
   bearerEvent.post("event", use: eventController.create)
+
+
 }

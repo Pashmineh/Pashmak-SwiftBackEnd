@@ -37,7 +37,6 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: "178.62.20.28:6379")!))
   databases.add(database: redis, as: .redis)
   
-  
   services.register(databases)
   
   var migrations = MigrationConfig()

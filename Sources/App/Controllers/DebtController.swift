@@ -30,7 +30,13 @@ final class DebtController {
         let amountNum = NSNumber(value: debt.amount)
         let amount = Formatters.RialFormatterWithRial.string(from: amountNum) ?? "\(debt.amount)"
         let message = PushService.Message(title: "پشمک", body: "بدهی به مبلغ \(amount) به دلیل \(reason.title)", subtitle: "اعلام بدهی")
-        try? PushService.shared.send(message: message, to: [user], on: req)
+        do {
+          try PushService.shared.send(message: message, to: [user], on: req)
+        }
+        catch {
+          print("Error sending push.\n\(error.localizedDescription)")
+        }
+
       }
 
   }
