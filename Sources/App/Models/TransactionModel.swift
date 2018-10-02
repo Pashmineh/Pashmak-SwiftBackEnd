@@ -14,14 +14,17 @@ extension Models {
       case TAKHIR
       case SHIRINI
       case JALASE
-      var amount: UInt64 {
+      case Payment
+      var amount: Int64 {
         switch self {
         case .JALASE:
-          return 50000
+          return -50000
         case .SHIRINI:
-          return 500000
+          return -500000
         case .TAKHIR:
-          return 50000
+          return -50000
+        case .Payment:
+          return 0
         }
       }
       var title: String {
@@ -32,6 +35,17 @@ extension Models {
           return "شیرینی خرید"
         case .TAKHIR:
           return "تاخیر ورود به شرکت"
+        case .Payment:
+          return "پرداخت بدهی"
+        }
+      }
+
+      var defaultValid: Bool {
+        switch self {
+        case .JALASE, .TAKHIR, .SHIRINI:
+          return true
+        case .Payment:
+          return false
         }
       }
     }
@@ -48,7 +62,29 @@ extension Models {
       return parent(\.userId)
     }
 
+    init(userId: User.ID, amount: Int64, reason: Reason, isValid: Bool , message: String? = nil) {
+      self.userId = userId
+      self.amount = amount
+      self.reason = reason.rawValue
+      self.isValid = isValid
+      self.message = message
+      self.date = Date().timeIntervalSince1970
+    }
 
+    struct CreateRequest: Content {
+      var amount: Int64
+      var reason: Reason
+      var message: String?
+
+      func transaction(for userID: User.ID) -> Transaction {
+        return Transaction(userId: userID, amount: self.amount, reason: self.reason, isValid: reason.defaultValid)
+      }
+    }
+
+    struct UpdateRequest: Content {
+      var message: String?
+      var isValid: Bool?
+    }
   }
 }
 

@@ -28,5 +28,7 @@ public func routes(_ router: Router) throws {
   let bearerEvent = router.grouped(Models.User.tokenAuthMiddleware())
   bearerEvent.post("event", use: eventController.create)
 
+  let transactionController = TransacrionRouteCollection()
+  try router.register(collection: transactionController)
 
 }
