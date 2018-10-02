@@ -20,7 +20,15 @@ extension Models {
     var pushToken: String
     var userId: Models.User.ID
     
+    init(installationID: String, platform: String, pushToken: String, userId: Models.User.ID) {
+      self.installationID = installationID
+      self.platform = platform
+      self.pushToken = pushToken
+      self.userId = userId
+    }
   }
+  
+ 
 }
 
 
@@ -29,3 +37,12 @@ extension Models.Device {
     return parent(\.userId)
   }
 }
+
+
+/// Allows `Device` to be encoded to and decoded from HTTP messages.
+extension Models.Device: Content { }
+
+extension Models.Device: Migration { }
+
+/// Allows `Device` to be used as a dynamic parameter in route definitions.
+extension Models.Device: Parameter { }

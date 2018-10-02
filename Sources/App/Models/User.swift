@@ -55,7 +55,7 @@ extension Models {
       }
     }
     
-    // Create New User Request
+    // Content required for Creating A New User
     struct CreateRequest: Content {
       var phoneNumber: String
       var firstName: String
@@ -63,6 +63,17 @@ extension Models {
       var password: String
       var avatarURL: String
       var balance: Int64
+    }
+    
+    // Content required for Loging in A User
+    struct LoginRequest: Content {
+      var installationID: String
+      var platform: String
+      var pushToken: String
+      
+      func device(for userID: User.ID) -> Device{
+        return Device(installationID: self.installationID, platform: self.platform, pushToken: self.pushToken, userId: userID)
+      }
     }
     
   }
