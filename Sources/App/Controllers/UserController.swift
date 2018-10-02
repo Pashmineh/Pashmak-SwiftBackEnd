@@ -27,7 +27,7 @@ struct UserRouteCollection: RouteCollection {
     basicGroup.post("login", use: UserController.login)
     
     // Token APIs
-    tokenGroup.get(rootPathComponent, use: TransactionController.get)
+    tokenGroup.get(rootPathComponent, use: UserController.get)
     
   }
 }

@@ -6,14 +6,9 @@ public func routes(_ router: Router) throws {
   
   let userRoutes = UserRouteCollection()
   try router.register(collection: userRoutes)
-  
-  let debtController = DebtController()
+    
   let eventController = EventController()
   
-  
-  let bearerDebt = router.grouped(Models.User.tokenAuthMiddleware())
-  bearerDebt.post("debts", use: debtController.create)
-
   // MARK: - Checkin
   let checkinController = CheckinController()
   let bearerCheckin = router.grouped(Models.User.tokenAuthMiddleware())
