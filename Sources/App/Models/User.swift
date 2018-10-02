@@ -12,55 +12,68 @@ import JWT
 
 extension Models {
   
-
-/// A registered user, capable of owning todo items.
-final class User: PostgreSQLUUIDModel {
   
-  
-  /// User's unique identifier.
-  /// Can be `nil` if the user has not been saved yet.
-  var id: UUID?
-  
-  var phoneNumber: String
-  var passwordHash: String
-  var firstName: String
-  var lastName: String
-  var pushToken: String
-  var platform: String
-  var avatar: String
-  var deviceID: String
-  
-  static let entity = "User"
-  
-  /// Creates a new `User`.
-  init(phoneNumber: String, passwordHash: String, firstName: String, lastName: String, pushToken: String, platform: String, avatar: String, deviceID: String) {
-    self.phoneNumber = phoneNumber
-    self.passwordHash = passwordHash
-    self.firstName = firstName
-    self.lastName = lastName
-    self.pushToken = pushToken
-    self.platform = platform
-    self.avatar = avatar
-    self.deviceID = deviceID
-  }
-  
-  struct JWT: JWTPayload {
-    var id: UUID
-    var phoneNumber: String
-    var issuedAt: Date
+  /// A registered user, capable of owning todo items.
+  final class User: PostgreSQLUUIDModel {
     
-    init(id: UUID, phoneNumber: String) {
-      self.id = id
+    
+    /// User's unique identifier.
+    /// Can be `nil` if the user has not been saved yet.
+    var id: UUID?
+    
+    var phoneNumber: String
+    var passwordHash: String
+    var firstName: String
+    var lastName: String
+    var avatarURL: String
+    var balance: Int64
+    
+    static let entity = "User"
+    
+    /// Creates a new `User`.
+    init(phoneNumber: String, passwordHash: String, firstName: String, lastName: String, avatarURL: String, balance: Int64) {
       self.phoneNumber = phoneNumber
-      self.issuedAt = Date()
+      self.passwordHash = passwordHash
+      self.firstName = firstName
+      self.lastName = lastName
+      self.avatarURL = avatarURL
+      self.balance = balance
     }
-    func verify(using signer: JWTSigner) throws {
-      // nothing to verify
+    
+    struct JWT: JWTPayload {
+      var id: UUID
+      var phoneNumber: String
+      var issuedAt: Date
+      
+      init(id: UUID?, phoneNumber: String) {
+        self.id = id ?? UUID()
+        self.phoneNumber = phoneNumber
+        self.issuedAt = Date()
+      }
+      func verify(using signer: JWTSigner) throws {
+        // nothing to verify
+      }
     }
+    
+    // Create New User Request
+    struct CreateRequest: Content {
+      var phoneNumber: String
+      var firstName: String
+      var lastName: String
+      var password: String
+      var avatarURL: String
+      var balance: Int64
+    }
+    
   }
 }
-}
 
+extension Models.User {
+  var devices: Children<Models.User, Models.Device> {
+    return children(\.userId)
+  }
+  
+}
 
 /// Allows users to be verified by basic / password auth middleware.
 extension Models.User: PasswordAuthenticatable {
