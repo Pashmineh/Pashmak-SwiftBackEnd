@@ -55,6 +55,7 @@ extension Models {
       }
     }
     
+    
     final class Public: Content {
       var phoneNumber: String
       var firstName: String
@@ -142,6 +143,15 @@ extension Models.User: Validatable {
   }
 }
 
+extension Models.User {
+  func updateBalance(_ req: Request) throws -> Future<Models.User.Public> {
+    return try self.transactions.query(on: req).filter(\.isValid == true).all().flatMap(to: Models.User.Public.self) { transactions in
+      let balance: Int64 = transactions.reduce(0) { $0 + $1.amount }
+      self.balance = balance
+      return self.save(on: req).map(to: Models.User.Public.self) { return $0.convertToPublic()}
+    }
+  }
+}
 
 
 /// Allows `User` to be encoded to and decoded from HTTP messages.
