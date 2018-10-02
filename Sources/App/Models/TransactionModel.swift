@@ -58,10 +58,6 @@ extension Models {
     var message: String?
     var isValid: Bool
 
-    var user: Parent<Transaction, User> {
-      return parent(\.userId)
-    }
-
     init(userId: User.ID, amount: Int64, reason: Reason, isValid: Bool , message: String? = nil) {
       self.userId = userId
       self.amount = amount
@@ -81,6 +77,20 @@ extension Models {
       }
     }
 
+    struct PublicAPI: Content {
+      var id: Transaction.ID?
+      var amount: Int64
+      var reason: String
+      var message: String?
+      var isValid: Bool
+      var date: Double
+
+    }
+
+    var publicApi: PublicAPI {
+      return PublicAPI(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, date: self.date)
+    }
+
     struct UpdateRequest: Content {
       var message: String?
       var isValid: Bool?
@@ -96,3 +106,10 @@ extension Models.Transaction: Migration { }
 
 /// Allows `Debt` to be used as a dynamic parameter in route definitions.
 extension Models.Transaction: Parameter { }
+
+extension Models.Transaction {
+  var user: Parent<Models.Transaction, Models.User> {
+    return parent(\.userId)
+  }
+}
+

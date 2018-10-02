@@ -151,3 +151,9 @@ extension Models.User: Migration { }
 
 /// Allows `User` to be used as a dynamic parameter in route definitions.
 extension Models.User: Parameter { }
+
+extension Models.User {
+  var transactions: Children<Models.User, Models.Transaction> {
+    return children(\.userId)
+  }
+}

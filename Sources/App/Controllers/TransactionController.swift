@@ -50,16 +50,41 @@ enum TransactionController {
 
   }
 
-  static func list(_ req: Request) throws -> Future<[Models.Transaction]> {
-    fatalError("Not implemented")
+  static func list(_ req: Request) throws -> Future<[Models.Transaction.PublicAPI]> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try user.transactions.query(on: req).decode(data: Models.Transaction.PublicAPI.self).all()
   }
 
-  static func item(_ req: Request) throws -> Future<Models.Transaction> {
-    fatalError("Not implemented")
+  static func item(_ req: Request) throws -> Future<Models.Transaction.PublicAPI> {
+    return try req.parameters.next(Models.Transaction.self)
+      .map(to: Models.Transaction.PublicAPI.self) { return $0.publicApi }
   }
 
-  static func update(_ req: Request) throws -> Future<Models.Transaction> {
-    fatalError("Not implemented")
+  static func update(_ req: Request) throws -> Future<Models.Transaction.PublicAPI> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try req.parameters.next(Models.Transaction.self)
+      .flatMap(to: Models.Transaction.PublicAPI.self) { oldTrans in
+        return try req.content.decode(Models.Transaction.UpdateRequest.self)
+          .flatMap(to: Models.Transaction.PublicAPI.self) { changes in
+          if let isValid = changes.isValid {
+            oldTrans.isValid = isValid
+          }
+          if let message = changes.message {
+            oldTrans.message = message
+          }
+          return oldTrans.save(on: req).map(to: Models.Transaction.PublicAPI.self){ return $0.publicApi }
+            .do { trans in
+
+              let msg = PushService.UpdateMessage()
+              do {
+                try PushService.shared.send(message: msg, to: [user], on: req)
+              } catch {
+                print("Could not send update push.")
+              }
+
+            }
+        }
+    }
   }
 }
 
