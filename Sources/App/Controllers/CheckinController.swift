@@ -7,19 +7,37 @@
 
 import Vapor
 import FluentPostgreSQL
+import SwiftDate
 
 final class CheckinController {
   
   func create(_ req: Request) throws -> Future<HTTPStatus> {
     let user = try req.requireAuthenticated(User.self)
+    let userID = try user.requireID()
 
-    // TODD: Check already checkin
+    
+
     // TODO: Add Penalty
 
     return try req.content.decode(CreateCheckinRequest.self).flatMap(to: Checkin.self) { createReq in
       return try Checkin(checkinTime: Date(), checkinType: createReq.checkinType, userId: user.requireID()).save(on: req)
       }.flatMap(to: HTTPStatus.self) { _ in
         return req.future(.created)
+    }
+  }
+
+  func isCheckinReported(_ req: Request) throws -> Future<Bool> {
+    let user = try req.requireAuthenticated(User.self)
+    let userID = try user.requireID()
+    var todayComponents = Date().dateComponents
+    todayComponents.setValue(0, for: Calendar.Component.hour)
+    todayComponents.setValue(0, for: Calendar.Component.minute)
+    guard let timeZone = TimeZone(identifier: "Asia/Tehran"),
+      let today = Date(components: todayComponents, region: Region(calendar: Calendar(identifier: .persian), zone: timeZone, locale: Locale(identifier: "en_US"))) else {
+        throw Abort(.internalServerError)
+    }
+    return Checkin.query(on: req).filter(\.userId == userID).filter(\.checkinTime > today).first().flatMap(to: Bool.self) { checkin in
+      return req.future(checkin == nil)
     }
   }
 

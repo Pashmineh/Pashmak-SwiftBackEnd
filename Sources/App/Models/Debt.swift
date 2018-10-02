@@ -35,6 +35,16 @@ final class Debt: PostgreSQLModel {
         return 50000
       }
     }
+    var title: String {
+      switch self {
+      case .JALASE:
+        return "تاخیر حضور در جلسه"
+      case .SHIRINI:
+        return "شیرینی خرید"
+      case .TAKHIR:
+        return "تاخیر ورود به شرکت"
+      }
+    }
   }
   
   init(id: Int? = nil, amount: UInt64, paymentTime: Date, reason: Reason, userId: Int) {
