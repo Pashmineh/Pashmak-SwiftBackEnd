@@ -16,9 +16,10 @@ private let rootPathComponent = "user"
 struct UserRouteCollection: RouteCollection {
   func boot(router: Router) throws {
     let baseRouter = router.grouped(rootPathComponent)
-    let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
-    let tokenGroup = baseRouter.grouped(Models.User.tokenAuthMiddleware())
     let openGroup = baseRouter.grouped("/")
+    let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
+    let logOutRoute = router.grouped("logout").grouped(Models.User.tokenAuthMiddleware())
+    let profileRoute = router.grouped("profile").grouped(Models.User.tokenAuthMiddleware())
     
     // Open
     openGroup.post(Models.User.CreateRequest.self, use: UserController.create)
@@ -27,7 +28,8 @@ struct UserRouteCollection: RouteCollection {
     basicGroup.post(Models.User.LoginRequest.self, use: UserController.login)
     
     // Token APIs
-    tokenGroup.get(rootPathComponent, use: UserController.get)
+    logOutRoute.get(use: UserController.logout)
+    profileRoute.get(use: UserController.get)
     
   }
 }
@@ -46,8 +48,18 @@ enum UserController {
       .transform(to: .ok)
   }
   
-  static func get(_ req: Request) throws -> Future<HTTPResponse> {
-    fatalError("Not implemented")
+  static func get(_ req: Request) throws -> Models.User {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return user
+  }
+  
+  static func logout(_ req: Request) throws -> Future<HTTPStatus> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try UserToken
+      .query(on: req)
+      .filter(\UserToken.userID, .equal, user.requireID())
+      .delete()
+      .transform(to: .ok)
   }
   
   static func login(_ req: Request, loginInfo: Models.User.LoginRequest) throws -> Future<UserToken> {

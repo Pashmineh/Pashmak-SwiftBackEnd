@@ -55,6 +55,23 @@ extension Models {
       }
     }
     
+    final class Public: Content {
+      var phoneNumber: String
+      var firstName: String
+      var lastName: String
+      var avatarURL: String
+      var balance: Int64
+      
+      init(phoneNumber: String, firstName: String, lastName: String, avatarURL: String, balance: Int64) {
+        self.phoneNumber = phoneNumber
+        self.firstName = firstName
+        self.lastName = lastName
+        self.avatarURL = avatarURL
+        self.balance = balance
+      }
+    }
+    
+    
     // Content required for Creating A New User
     struct CreateRequest: Content {
       var phoneNumber: String
@@ -78,6 +95,17 @@ extension Models {
     
   }
 }
+
+extension Models.User {
+  func convertToPublic() -> Models.User.Public {
+    return Models.User.Public(phoneNumber: self.phoneNumber,
+                              firstName: self.firstName,
+                              lastName: self.lastName,
+                              avatarURL: self.avatarURL,
+                              balance: self.balance)
+  }
+}
+
 
 extension Models.User {
   var devices: Children<Models.User, Models.Device> {
@@ -112,9 +140,9 @@ extension Models.User: Validatable {
     try validations.add(\.phoneNumber, .count(3...))
     return validations
   }
-  
-  
 }
+
+
 
 /// Allows `User` to be encoded to and decoded from HTTP messages.
 extension Models.User: Content { }
