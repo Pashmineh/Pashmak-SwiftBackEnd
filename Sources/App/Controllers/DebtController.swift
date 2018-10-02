@@ -27,7 +27,9 @@ final class DebtController {
       .save(on: req)
       .do { debt in
         let reason = Debt.Reason(rawValue: debt.reason) ?? .TAKHIR
-        let message = PushService.Message(title: "پشمک", body: "بدهی به مبلغ \(debt.amount) به دلیل \(reason.title)", subtitle: "اعلام بدهی")
+        let amountNum = NSNumber(value: debt.amount)
+        let amount = Formatters.RialFormatterWithRial.string(from: amountNum) ?? "\(debt.amount)"
+        let message = PushService.Message(title: "پشمک", body: "بدهی به مبلغ \(amount) به دلیل \(reason.title)", subtitle: "اعلام بدهی")
         try? PushService.shared.send(message: message, to: [user], on: req)
       }
 
