@@ -10,35 +10,44 @@ import FluentPostgreSQL
 import Vapor
 import JWT
 
-final class Event: PostgreSQLModel {
+extension Models {
   
-  /// User's unique identifier.
-  /// Can be `nil` if the user has not been saved yet.
-  var id: Int?
-  
-  var name: String
-  var description: String
-  var location: String
-  var eventTime: String
-  var eventTimeEpoch: Double
-  
-  
-  static let entity = "Event"
-  
-  init(id: Int? = nil,
-       name: String,
-       description: String,
-       location: String,
-       eventTime: String,
-       eventTimeEpoch: Double) {
+  final class Event: PostgreSQLModel {
     
-    self.id = id
-    self.name = name
-    self.description = description
-    self.location = location
-    self.eventTime = eventTime
-    self.eventTimeEpoch = eventTimeEpoch
-  
+    var id: Int?
+    
+    var title: String
+    var description: String
+    var date: Date
+    var addressId: Models.Address.ID
+    var imageURL: String
+
+    
+    static let entity = "Event"
+    
+    init(title: String,
+         description: String,
+         date: Date,
+         addressId: Models.Address.ID,
+         imageURL: String) {
+      
+      self.title = title
+      self.description = description
+      self.date = date
+      self.addressId = addressId
+      self.imageURL = imageURL
+    }
+    
   }
-  
 }
+
+
+
+/// Allows `Event` to be encoded to and decoded from HTTP messages.
+extension Models.Event: Content { }
+
+/// Allows `Event` to be Migrated
+extension Models.Event: Migration { }
+
+/// Allows `Event` to be used as a dynamic parameter in route definitions.
+extension Models.Event: Parameter { }
