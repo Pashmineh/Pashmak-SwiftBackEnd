@@ -22,12 +22,11 @@ struct TransacrionRouteCollection: RouteCollection {
 
 enum TransactionController {
 
-  static func create(_ req: Request, createRequest: Models.Transaction.CreateRequest) throws -> Future<Models.Transaction> {
+  static func create(_ req: Request, createRequest: Models.Transaction.CreateRequest) throws -> Future<Models.Transaction.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
     let userID = try user.requireID()
 
-    return createRequest.transaction(for: userID)
-    .save(on: req)
+    return addNewTransaction(userID: userID, createRequest: createRequest, on: req)
       .do { trans in
         let reason = Models.Transaction.Reason(rawValue: trans.reason) ?? .TAKHIR
         let amountNum = NSNumber(value: trans.amount)
@@ -49,33 +48,37 @@ enum TransactionController {
         catch {
           print("Error sending push.\n\(error.localizedDescription)")
         }
-      }
+      }.map(to: Models.Transaction.Public.self) { return $0.public }
 
   }
 
-  static func list(_ req: Request) throws -> Future<[Models.Transaction.PublicAPI]> {
+  static func addNewTransaction(userID: Models.User.ID, createRequest: Models.Transaction.CreateRequest, on conn: DatabaseConnectable) -> Future<Models.Transaction> {
+    return createRequest.transaction(for: userID).save(on: conn)
+  }
+
+  static func list(_ req: Request) throws -> Future<[Models.Transaction.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.transactions.query(on: req).decode(data: Models.Transaction.PublicAPI.self).all()
+    return try user.transactions.query(on: req).sort(\.date, .descending).decode(data: Models.Transaction.Public.self).all()
   }
 
-  static func item(_ req: Request) throws -> Future<Models.Transaction.PublicAPI> {
+  static func item(_ req: Request) throws -> Future<Models.Transaction.Public> {
     return try req.parameters.next(Models.Transaction.self)
-      .map(to: Models.Transaction.PublicAPI.self) { return $0.publicApi }
+      .map(to: Models.Transaction.Public.self) { $0.public }
   }
 
-  static func update(_ req: Request) throws -> Future<Models.Transaction.PublicAPI> {
+  static func update(_ req: Request) throws -> Future<Models.Transaction.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
     return try req.parameters.next(Models.Transaction.self)
-      .flatMap(to: Models.Transaction.PublicAPI.self) { oldTrans in
+      .flatMap(to: Models.Transaction.Public.self) { oldTrans in
         return try req.content.decode(Models.Transaction.UpdateRequest.self)
-          .flatMap(to: Models.Transaction.PublicAPI.self) { changes in
+          .flatMap(to: Models.Transaction.Public.self) { changes in
           if let isValid = changes.isValid {
             oldTrans.isValid = isValid
           }
           if let message = changes.message {
             oldTrans.message = message
           }
-          return oldTrans.save(on: req).map(to: Models.Transaction.PublicAPI.self){ return $0.publicApi }
+          return oldTrans.save(on: req).map(to: Models.Transaction.Public.self){ return $0.public }
             .do { trans in
 
               let msg = PushService.UpdateMessage(type: .transaction, event: .update)

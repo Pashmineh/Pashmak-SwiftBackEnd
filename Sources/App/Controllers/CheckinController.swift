@@ -9,75 +9,101 @@ import Vapor
 import FluentPostgreSQL
 import SwiftDate
 
-final class CheckinController {
+private let kTodayFormatter = DateFormatter.englishDateFormatterForTehran(with: "YYYY/MM/dd")
+private let kMessageDateFormatter = DateFormatter.farsiDateFormatter(with: "EEEE dd MMMM YYYY ساعت HH:mm")
+private let rootPathComponent = "checkin"
+
+struct CheckinRouteCollection: RouteCollection {
+  func boot(router: Router) throws {
+    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    tokenGroup.post(Models.Checkin.CreateRequest.self, use: CheckinController.create)
+    tokenGroup.get(use: CheckinController.list)
+    tokenGroup.get(Models.Checkin.parameter, use: CheckinController.item)
+//    tokenGroup.put(Models.Transaction.parameter, use: TransactionController.update)
+
+  }
+}
+
+enum CheckinController {
   
-  func create(_ req: Request) throws -> Future<HTTPStatus> {
+  static func create(_ req: Request, createRequest: Models.Checkin.CreateRequest) throws -> Future<Models.Checkin.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
     let userID = try user.requireID()
+    let refDate = Date()
 
+    return try isCheckinReported(req, on: refDate, for: user).flatMap(to: Models.Checkin.Public.self) { isReported in
+      guard !isReported else {
+        throw Abort(.alreadyReported)
+      }
+
+
+      return req.transaction(on: .psql) { conn in
+        func addCheckin() -> Future<Models.Checkin.Public> {
+          return createRequest.checkin(for: userID, on: refDate.timeIntervalSince1970).save(on: conn).map(to: Models.Checkin.Public.self) { return $0.public }
+            .do { _ in
+              let updateMsg = PushService.UpdateMessage(type: .checkin, event: .create)
+              do {
+                try PushService.shared.send(message: updateMsg, to: [user], on: req)
+              } catch {
+                print("error sending checkin update notif.\n\(error.localizedDescription)")
+              }
+            }
+        }
+
+        if refDate.hourInTehran ?? 0 >= 10 {
+          let reason = Models.Transaction.Reason.TAKHIR
+          let dateString = kMessageDateFormatter.string(from: refDate)
+          let amountNum = NSNumber(value:abs(reason.amount))
+          let amount = Formatters.RialFormatterWithRial.string(from: amountNum) ?? "\(reason.amount)"
+          let message = "جریمه تاخیر ورود در \(dateString) به مبلغ \(amount) ثبت شد."
+          let penalty = Models.Transaction.CreateRequest.init(amount: reason.amount, reason: reason, message: message)
+          return TransactionController.addNewTransaction(userID: userID, createRequest: penalty, on: conn).flatMap { _ in
+            return addCheckin()
+              .do { _ in
+                do {
+                  let msg = PushService.Message(title: "ثبت تاخیر", body: message, subtitle: nil)
+                  try PushService.shared.send(message: msg, to: [user], on: req)
+                } catch {
+                  print("Error sending penalty message.\n\(error.localizedDescription)")
+                }
+            }
+          }
+        } else {
+          return addCheckin()
+        }
+
+      }
+
+    }
     
-
-    // TODO: Add Penalty
-
-    return try req.content.decode(CreateCheckinRequest.self).flatMap(to: Checkin.self) { createReq in
-      return try Checkin(checkinTime: Date(), checkinType: createReq.checkinType, userId: user.requireID()).save(on: req)
-      }.flatMap(to: HTTPStatus.self) { _ in
-        return req.future(.created)
-    }
   }
 
-  func isCheckinReported(_ req: Request) throws -> Future<Bool> {
-    let user = try req.requireAuthenticated(Models.User.self)
-    let userID = try user.requireID()
-    var todayComponents = Date().dateComponents
-    todayComponents.setValue(0, for: Calendar.Component.hour)
-    todayComponents.setValue(0, for: Calendar.Component.minute)
-    guard let timeZone = TimeZone(identifier: "Asia/Tehran"),
-      let today = Date(components: todayComponents, region: Region(calendar: Calendar(identifier: .persian), zone: timeZone, locale: Locale(identifier: "en_US"))) else {
-        throw Abort(.internalServerError)
-    }
-    return Checkin.query(on: req).filter(\.userId == userID).filter(\.checkinTime > today).first().flatMap(to: Bool.self) { checkin in
-      return req.future(checkin == nil)
-    }
-  }
+  static func isCheckinReported(_ req: Request, on refDate: Date, for user: Models.User) throws -> Future<Bool> {
 
-  func getAll(_ req: Request) throws -> Future<[CheckinResponse]> {
-    let user = try req.requireAuthenticated(Models.User.self)
-    return try Checkin.query(on: req).filter(\.userId == user.requireID()).all().flatMap(to: [CheckinResponse].self) { checkins in
-      var result: [CheckinResponse] = []
-      checkins.forEach {
-        result.append(CheckinResponse(checkinType: Checkin.CheckinType(rawValue: $0.checkinType) ?? .manual, chckinTime: $0.checkinTime.timeIntervalSince1970, id: $0.id, userId: $0.userId))
-      }
-      return req.future(result)
-    }
-  }
+    let today = Date()
+    let todayString = kTodayFormatter.string(from: today)
 
-  func getCheckin(_ req: Request) throws -> Future<CheckinResponse> {
-    let user = try req.requireAuthenticated(Models.User.self)
-    return try req.parameters.next(Checkin.self).flatMap(to: CheckinResponse.self) { checkin in
-      let userID = try user.requireID()
-      if checkin.userId != userID {
-        throw Abort(.notFound)
+    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).first().map(to: Bool.self) {
+      guard let checkinDate = $0?.checkinTime else {
+        return false
       }
 
-      let checkinContent = CheckinResponse(checkinType: Checkin.CheckinType(rawValue: checkin.checkinType) ?? .manual , chckinTime: checkin.checkinTime.timeIntervalSince1970, id: checkin.id, userId: checkin.userId)
-      return req.future(checkinContent)
+      let chDate = Date(timeIntervalSince1970: checkinDate)
+      let lastDateString = kTodayFormatter.string(from: chDate)
+      return todayString == lastDateString
     }
 
   }
 
+  static func list(_ req: Request) throws -> Future<[Models.Checkin.Public]> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).decode(data: Models.Checkin.Public.self).all()
+  }
+
+  static func item(_ req: Request) throws -> Future<Models.Checkin.Public> {
+    return try req.parameters.next(Models.Checkin.self).map(to: Models.Checkin.Public.self) { $0.public }
+  }
+
 }
 
-// MARK: Content
 
-// Data Required to create a Debt
-struct CreateCheckinRequest: Content {
-  var checkinType: Checkin.CheckinType
-}
-
-struct CheckinResponse: Content {
-  var checkinType: Checkin.CheckinType
-  var chckinTime: Double
-  var id: Int?
-  var userId: Models.User.ID
-}

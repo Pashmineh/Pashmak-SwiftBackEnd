@@ -73,11 +73,11 @@ extension Models {
       var message: String?
 
       func transaction(for userID: User.ID) -> Transaction {
-        return Transaction(userId: userID, amount: self.amount, reason: self.reason, isValid: reason.defaultValid)
+        return Transaction(userId: userID, amount: self.amount, reason: self.reason, isValid: reason.defaultValid, message: self.message)
       }
     }
 
-    struct PublicAPI: Content {
+    struct Public: Content {
       var id: Transaction.ID?
       var amount: Int64
       var reason: String
@@ -87,8 +87,8 @@ extension Models {
 
     }
 
-    var publicApi: PublicAPI {
-      return PublicAPI(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, date: self.date)
+    var `public`: Public {
+      return Public(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, date: self.date)
     }
 
     struct UpdateRequest: Content {

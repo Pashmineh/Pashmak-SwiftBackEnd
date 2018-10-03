@@ -176,4 +176,9 @@ extension Models.User {
   var transactions: Children<Models.User, Models.Transaction> {
     return children(\.userId)
   }
+
+  var checkins: Children<Models.User, Models.Checkin> {
+    return children(\.userId)
+  }
+
 }
