@@ -22,6 +22,4 @@ public func routes(_ router: Router) throws {
   let messageRoutes = MessageRouteCollection()
   try router.register(collection: messageRoutes)
 
-  
-  
 }
