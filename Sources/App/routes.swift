@@ -19,4 +19,7 @@ public func routes(_ router: Router) throws {
   let checkinRoutes = CheckinRouteCollection()
   try router.register(collection: checkinRoutes)
 
+  let messageRoutes = MessageRouteCollection()
+  try router.register(collection: messageRoutes)
+
 }
