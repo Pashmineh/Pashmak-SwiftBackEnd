@@ -181,4 +181,8 @@ extension Models.User {
     return children(\.userId)
   }
 
+  var messages: Children<Models.User, Models.Message> {
+    return children(\.userId)
+  }
+
 }
