@@ -47,5 +47,6 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   migrations.add(model: Models.Event.self, database: .psql)
   migrations.add(model: Models.Transaction.self, database: .psql)
   migrations.add(model: Models.Message.self, database: .psql)
+  migrations.add(model: Models.Address.self, database: .psql)
   services.register(migrations)
 }
