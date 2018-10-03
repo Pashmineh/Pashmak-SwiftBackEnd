@@ -42,9 +42,10 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   var migrations = MigrationConfig()
   migrations.add(model: Models.User.self, database: .psql)
   migrations.add(model: Models.Device.self, database: .psql)
-  migrations.add(model: UserToken.self, database: .psql)
+  migrations.add(model: Models.UserToken.self, database: .psql)
   migrations.add(model: Checkin.self, database: .psql)
-  migrations.add(model: Event.self, database: .psql)
+  migrations.add(model: Models.Event.self, database: .psql)
+  migrations.add(model: Models.Address.self, database: .psql)
   migrations.add(model: Models.Transaction.self, database: .psql)
   services.register(migrations)
 }

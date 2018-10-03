@@ -6,8 +6,16 @@ public func routes(_ router: Router) throws {
   
   let userRoutes = UserRouteCollection()
   try router.register(collection: userRoutes)
-    
-  let eventController = EventController()
+  
+  let addressRoutes = AddressRouteCollection()
+  try router.register(collection: addressRoutes)
+  
+  let eventRoutes = EventRouteCollection()
+  try router.register(collection: eventRoutes)
+  
+  let transactionController = TransacrionRouteCollection()
+  try router.register(collection: transactionController)
+
   
   // MARK: - Checkin
   let checkinController = CheckinController()
@@ -16,10 +24,6 @@ public func routes(_ router: Router) throws {
   bearerCheckin.get("checkins", use: checkinController.getAll)
   bearerCheckin.get("checkin", Checkin.parameter, use: checkinController.getCheckin)
   
-  let bearerEvent = router.grouped(Models.User.tokenAuthMiddleware())
-  bearerEvent.post("event", use: eventController.create)
-
-  let transactionController = TransacrionRouteCollection()
-  try router.register(collection: transactionController)
-
+ 
+  
 }

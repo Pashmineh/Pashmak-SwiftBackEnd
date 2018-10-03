@@ -131,7 +131,7 @@ extension Models.User: PasswordAuthenticatable {
 /// Allows users to be verified by bearer / token auth middleware.
 extension Models.User: TokenAuthenticatable {
   /// See `TokenAuthenticatable`.
-  typealias TokenType = UserToken
+  typealias TokenType = Models.UserToken
 }
 
 /// Validation User Inputs
