@@ -34,8 +34,6 @@ extension Models {
     }
   }
   
-  
-  
 }
 
 /// Allows `Address` to be encoded to and decoded from HTTP messages.
@@ -46,3 +44,6 @@ extension Models.Address: Migration { }
 
 /// Allows `Address` to be used as a dynamic parameter in route definitions.
 extension Models.Address: Parameter { }
+
+
+

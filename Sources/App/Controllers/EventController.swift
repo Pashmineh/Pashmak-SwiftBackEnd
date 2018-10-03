@@ -21,8 +21,10 @@ struct EventRouteCollection: RouteCollection {
 
 enum EventController {
   
-  static func create(_ req: Request, event: Models.Event) throws -> Future<Models.Event> {
-    return event.save(on: req)
+  static func create(_ req: Request, event: Models.Event) throws -> Future<Models.Event.Public> {
+    return event.save(on: req).flatMap(to: Models.Event.Public.self) { event in
+      return event.convertToPublic(on: req)
+    }
   }
   
   static func list(_ req: Request) throws -> Future<[Models.Address]> {
