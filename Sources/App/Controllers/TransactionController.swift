@@ -40,8 +40,11 @@ enum TransactionController {
         :
         PushService.Message(title: "پشمک", body: "بدهی به مبلغ \(amount) به دلیل \(reason.title)", subtitle: "اعلام بدهی")
 
+        let updateMsg = PushService.UpdateMessage(type: .transaction, event: .create)
+
         do {
           try PushService.shared.send(message: message, to: [user], on: req)
+          try PushService.shared.send(message: updateMsg, to: [user], on: req)
         }
         catch {
           print("Error sending push.\n\(error.localizedDescription)")
@@ -75,7 +78,7 @@ enum TransactionController {
           return oldTrans.save(on: req).map(to: Models.Transaction.PublicAPI.self){ return $0.publicApi }
             .do { trans in
 
-              let msg = PushService.UpdateMessage()
+              let msg = PushService.UpdateMessage(type: .transaction, event: .update)
               do {
                 try PushService.shared.send(message: msg, to: [user], on: req)
               } catch {

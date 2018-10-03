@@ -63,7 +63,33 @@ class PushService {
   }
 
   struct UpdateMessage: GORushConvertibale {
+
+    enum UpdateType: String, Codable {
+      case profile = "PROFILE"
+      case messages = "MESSAGES"
+      case checkin = "CHECKIN"
+      case transaction = "TRANSACTION"
+      case home = "HOME"
+      case poll = "POLL"
+    }
+
+    enum EventType: String, Codable {
+      case create = "CREATE"
+      case update = "UPDATE"
+      case delete = "DELETE"
+    }
+
+    let type: UpdateType
+    let event: EventType?
+
+
     func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage> {
+
+      var data: [String: String] = ["type": self.type.rawValue]
+      if let event = self.event {
+        data["event"] = event.rawValue
+      }
+
       return users.compactMap { try? $0.devices.query(on: worker).all() }.flatMap(to: PushService.GORushMessage.self, on: worker) { devices in
         let devs = devices.flatMap { $0 }
         let iOSTokens: [String] =  devs.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
@@ -72,12 +98,12 @@ class PushService {
         var notifications: [GORushMessage.Notification] = []
 
         if !iOSTokens.isEmpty {
-          let notif = GORushMessage.Notification(tokens: iOSTokens, platform: .iOS, message: nil, title: nil, priority: .high, topic: kTopic, data: nil, alert: nil, notification: nil, content_available: true)
+          let notif = GORushMessage.Notification(tokens: iOSTokens, platform: .iOS, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: true)
           notifications.append(notif)
         }
 
         if !androidTokens.isEmpty {
-          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: nil, alert: nil, notification: nil, content_available: true)
+          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: true)
           notifications.append(notif)
         }
 
@@ -132,7 +158,7 @@ class PushService {
       let title: String?
       let priority: Priority
       let topic: String
-      let data: String?
+      let data: [String: String]?
       let alert: iOSNotification?
       let notification: AndroidNotification?
       let content_available: Bool?

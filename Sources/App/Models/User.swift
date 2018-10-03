@@ -151,7 +151,7 @@ extension Models.User {
       self.balance = balance
       return self.save(on: req).map(to: Models.User.Public.self) { return $0.convertToPublic()}
         .do { _ in
-          let msg = PushService.UpdateMessage()
+          let msg = PushService.UpdateMessage(type: .profile, event: .update)
           do {
             try PushService.shared.send(message: msg, to: [self] , on: req)
           } catch {
