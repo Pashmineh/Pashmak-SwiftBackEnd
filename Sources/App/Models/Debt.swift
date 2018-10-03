@@ -22,6 +22,7 @@ final class Debt: PostgreSQLModel {
   var userId: Int
   var userLogin: String
   
+  
   enum Reason: String, Codable {
     case TAKHIR
     case SHIRINI

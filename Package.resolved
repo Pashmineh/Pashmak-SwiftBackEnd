@@ -173,6 +173,15 @@
         }
       },
       {
+        "package": "SwiftDate",
+        "repositoryURL": "https://github.com/malcommac/SwiftDate.git",
+        "state": {
+          "branch": null,
+          "revision": "1a1b395a890b94881056ee50bfee3ed2cf9c3149",
+          "version": "5.0.9"
+        }
+      },
+      {
         "package": "TemplateKit",
         "repositoryURL": "https://github.com/vapor/template-kit.git",
         "state": {
