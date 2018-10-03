@@ -82,11 +82,18 @@ extension DateFormatter {
     let dateFormatter = DateFormatter()
     dateFormatter.locale = Locale(identifier: "fa_IR")
     dateFormatter.calendar = Calendar(identifier: .persian)
-    dateFormatter.timeZone = TimeZone.autoupdatingCurrent
+    dateFormatter.timeZone = TimeZone(identifier: "Asia/Tehran")
     dateFormatter.timeStyle = .none
     dateFormatter.dateFormat = dateFormat
     return dateFormatter
   }
+
+  static func englishDateFormatterForTehran(with dateFormat: String) -> DateFormatter {
+    let dateFormatter = farsiDateFormatter(with: dateFormat)
+    dateFormatter.locale = Locale(identifier: "en_US")
+    return dateFormatter
+  }  
+
 }
 
 extension String {

@@ -10,82 +10,57 @@ import FluentPostgreSQL
 import Vapor
 import JWT
 
-/*
-{
-  "checkinTime": "2018-10-01T12:09:47.712Z",
-  "checkinTimeEpoch": 0,
-  "checkinType": "MANUAL",
-  "id": 0,
-  "message": "string",
-  "userId": 0,
-  "userLogin": "string"
+extension Models {
+
+  final class Checkin: PostgreSQLUUIDModel {
+
+    enum CheckinType: String, Codable {
+      case manual = "MANUAL"
+      case iBeacon = "IBEACON"
+    }
+
+    var id: UUID?
+    var checkinTime: Double
+    var checkinType: String
+    var userId: Models.User.ID
+
+    init(checkinTime: Double, checkinType: CheckinType, userId: UUID) {      
+      self.checkinTime = checkinTime
+      self.checkinType = checkinType.rawValue
+      self.userId = userId
+    }
+
+  }
 }
-*/
+extension Models.Checkin: Content {}
+extension Models.Checkin: Migration {}
+extension Models.Checkin: Parameter {}
 
-final class Checkin: PostgreSQLModel {
+extension Models.Checkin {
+  // Data Required to create a Debt
+  struct CreateRequest: Content {
 
-  enum CheckinType: String, Codable {
-    case manual = "MANUAL"
-    case iBeacon = "IBEACON"
+    var checkinType: Models.Checkin.CheckinType
+
+    func checkin(for userId: UUID, on date: Double) -> Models.Checkin {
+      return Models.Checkin(checkinTime: date, checkinType: self.checkinType, userId: userId)
+    }
   }
 
-  var id: Int?
+  struct Public: Content {
+    var id: Models.Checkin.ID?
+    var checkinType: String
+    var checkinTime: Double
 
-  var checkinTime: Date
-  var checkinType: String
-
-  var userId: Models.User.ID
-
-  init(id: Int? = nil, checkinTime: Date, checkinType: CheckinType, userId: UUID) {
-    self.id = id
-    self.checkinTime = checkinTime
-    self.checkinType = checkinType.rawValue
-    self.userId = userId
   }
 
-}
-
-extension Checkin: Content {}
-extension Checkin: Migration {}
-extension Checkin: Parameter {}
-
-/*
-final class Debt: PostgreSQLModel {
-
-  /// User's unique identifier.
-  /// Can be `nil` if the user has not been saved yet.
-  var id: Int?
-
-  var amount: UInt64
-  var paymentTime: String
-  var reason: String
-  var userId: Int
-  var userLogin: String
-
-  enum Reason: String, Codable {
-    case TAKHIR
-    case SHIRINI
-    case JALASE
+  var `public`: Public {
+    return Public(id: self.id, checkinType: self.checkinType, checkinTime: self.checkinTime)
   }
-
-  init(id: Int? = nil, amount: UInt64, paymentTime: String, reason: Reason, userId: Int, userLogin: String) {
-    self.id = id
-    self.amount = amount
-    self.paymentTime = paymentTime
-    self.reason = reason.rawValue
-    self.userId = userId
-    self.userLogin = userLogin
-  }
-
 }
 
-
-/// Allows `Debt` to be encoded to and decoded from HTTP messages.
-extension Debt: Content { }
-
-/// Allows `Debt` to be Migrated
-extension Debt: Migration { }
-
-/// Allows `Debt` to be used as a dynamic parameter in route definitions.
-extension Debt: Parameter { }
-*/
+extension Models.Checkin {
+  var user: Parent<Models.Checkin, Models.User> {
+    return parent(\.userId)
+  }
+}
