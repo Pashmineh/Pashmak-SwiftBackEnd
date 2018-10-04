@@ -273,17 +273,11 @@ extension Models.Vote {
     }
   }
 
-  func willDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
+  func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
     return conn.future(self).always {
       PushService.shared.sendPollUpdate(on: conn)
     }
-  }
-
-  func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
-    return conn.future(self).always {
-      PushService.shared.sendPollUpdate(on: conn)
-    }
-  }
+  }  
 
 }
 
