@@ -56,6 +56,16 @@ extension Models.Poll {
 
   }
 
+  struct UpdateRequest: Content {
+    let title: String?
+    let description: String?
+    let imageSrc: String?
+    let voteLimit: Int?
+    let isAnonymous: Bool?
+    let expirationDate: Double?
+    let isEnabled: Bool?
+  }
+
   // Responses
 
   struct Public: Content {
@@ -66,11 +76,16 @@ extension Models.Poll {
     var voteLimit: Int
     var isAnonymous: Bool
     var expirationDate: Double
-
+    var pollItems: [Models.PollItem.Public]
   }
 
-  var `public`: Public {
-    return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate)
+  func `public`(on req: Request) throws -> Future<Models.Poll.Public> {
+
+    return try self.pollItems.query(on: req).all().map(to: Models.Poll.Public.self) {
+      let polltems = $0.map { $0.public }
+      return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: polltems)
+    }
+
   }
 
 }
@@ -78,4 +93,67 @@ extension Models.Poll {
 // MARK: Relationships
 extension Models.Poll {
 
+  var pollItems: Children<Models.Poll, Models.PollItem> {
+    return children(\.pollId)
+  }
+
 }
+
+
+extension Models {
+
+  final class PollItem: PostgreSQLUUIDModel {
+    var id: UUID?
+    var title: String
+    var imageSrc: String?
+    var pollId: Models.Poll.ID
+
+    init(title: String, pollId: Models.Poll.ID, imageSrc: String? = nil) {
+      self.title = title
+      self.pollId = pollId
+      self.imageSrc = imageSrc
+    }
+  }
+
+}
+
+extension Models.PollItem: Content { }
+extension Models.PollItem: Migration { }
+extension Models.PollItem: Parameter { }
+
+// MARK: Contents
+extension Models.PollItem {
+
+  // Request
+
+  struct CreateRequest: Content {
+    var title: String
+    var imageSrc: String?
+    func pollItem(pollId: Models.Poll.ID) -> Models.PollItem {
+      return Models.PollItem(title: self.title, pollId: pollId, imageSrc: self.imageSrc)
+    }
+  }
+
+  // Response
+  struct Public: Content {
+    var id: UUID?
+    var title: String
+    var imageSrc: String?
+  }
+
+  var `public`: Public {
+    return Public(id: self.id, title: self.title, imageSrc: self.imageSrc)
+  }
+
+}
+
+// MARK: Relationships
+extension Models.PollItem {
+
+  var poll: Parent<Models.PollItem, Models.Poll> {
+    return parent(\.pollId)
+  }
+
+}
+
+
