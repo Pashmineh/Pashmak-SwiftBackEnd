@@ -11,7 +11,7 @@ private let rootPathComponent = "event"
 
 struct EventRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     tokenGroup.post(Models.Event.CreateRequest.self, use: EventController.create)
     tokenGroup.get(use: EventController.list)
     tokenGroup.get(Models.Event.parameter, use: EventController.item)
