@@ -16,13 +16,15 @@ struct PollRouteCollection: RouteCollection {
     tokenGroup.post(Models.Poll.CreateRequest.self, use: PollController.create)
     tokenGroup.get(use: PollController.list)
     tokenGroup.get(Models.Poll.parameter, use: PollController.item)
-    tokenGroup.get(Models.Poll.parameter, use: PollController.item)
     tokenGroup.grouped(Models.Poll.parameter).put(Models.Poll.UpdateRequest.self, use: PollController.update)
     tokenGroup.delete(Models.Poll.parameter, use: PollController.delete)
 
     let itemTokenGroup = tokenGroup.grouped(Models.Poll.parameter).grouped(pollItemPathComponent)
     itemTokenGroup.post(Models.PollItem.CreateRequest.self, use: PollItemController.create)
     itemTokenGroup.get("", use: PollItemController.list)
+    itemTokenGroup.get(Models.PollItem.parameter, use: PollItemController.item)
+    itemTokenGroup.grouped(Models.PollItem.parameter).put(Models.PollItem.UpdateRequest.self, use: PollItemController.update)
+    itemTokenGroup.delete(Models.PollItem.parameter, use: PollItemController.delete)
   }
 }
 
@@ -88,6 +90,25 @@ enum PollItemController {
     return try req.parameters.next(Models.Poll.self).flatMap(to: [Models.PollItem.Public].self) {
       return try $0.pollItems.query(on: req).all().map(to: [Models.PollItem.Public].self){ $0.map { $0.public } }
     }
+  }
+
+  static func item(_ req: Request) throws -> Future<Models.PollItem.Public> {
+    _ = try req.parameters.next(Models.Poll.self)
+    return try req.parameters.next(Models.PollItem.self).map { $0.public }
+  }
+
+  static func update(_ req: Request, updateRequest: Models.PollItem.UpdateRequest) throws -> Future<Models.PollItem.Public> {
+    _ = try req.parameters.next(Models.Poll.self)
+    return try req.parameters.next(Models.PollItem.self).flatMap(to: Models.PollItem.Public.self) {
+      $0.title = updateRequest.title ?? $0.title
+      $0.imageSrc = updateRequest.imageSrc ?? $0.imageSrc
+      return $0.save(on: req).map { $0.public }
+    }
+  }
+
+  static func delete(_ req: Request) throws -> Future<HTTPStatus> {
+    _ = try req.parameters.next(Models.Poll.self)
+    return try req.parameters.next(Models.PollItem.self).delete(on: req).transform(to: .ok)
   }
 
 }

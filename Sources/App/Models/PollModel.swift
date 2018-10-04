@@ -134,6 +134,11 @@ extension Models.PollItem {
     }
   }
 
+  struct UpdateRequest: Content {
+    var title: String?
+    var imageSrc: String?
+  }
+
   // Response
   struct Public: Content {
     var id: UUID?
