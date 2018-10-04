@@ -21,7 +21,8 @@ extension Models {
     var date: Date
     var addressId: Models.Address.ID
     var imageURL: String
-
+    var isEnabled: Bool
+    var isHeld: Bool
     
     static let entity = "Event"
     
@@ -36,6 +37,8 @@ extension Models {
       self.date = date
       self.addressId = addressId
       self.imageURL = imageURL
+      self.isHeld = false
+      self.isEnabled = true
     }
     
    
@@ -70,6 +73,23 @@ extension Models.Event {
     return Models.Address.find(self.addressId, on: req).unwrap(or: Abort(.badRequest)).map(to: Models.Event.Public.self) { address in
       return Models.Event.Public(id: self.id, title: self.title, description: self.description, date: self.date, address: address, imageURL: self.imageURL)
     }
+  }
+  
+  struct CreateRequest: Content {
+    var title: String
+    var description: String
+    var date: Date
+    var addressId: Models.Address.ID
+    var imageURL: String
+  }
+  struct UpdateRequest: Content {
+    var title: String?
+    var description: String?
+    var date: Date?
+    var addressId: Models.Address.ID?
+    var imageURL: String?
+    var isHeld: Bool?
+    var isEnabled: Bool?
   }
 }
 

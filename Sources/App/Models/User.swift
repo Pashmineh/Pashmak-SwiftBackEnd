@@ -157,7 +157,6 @@ extension Models.User {
           } catch {
             print("error sending balance update push.\n\(error.localizedDescription)")
           }
-
       }
     }
   }
