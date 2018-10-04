@@ -199,4 +199,8 @@ extension Models.User {
     return children(\.userId)
   }
 
+  var votes: Children<Models.User, Models.Vote> {
+    return children(\.userId)
+  }
+
 }

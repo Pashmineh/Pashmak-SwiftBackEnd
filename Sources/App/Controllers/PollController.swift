@@ -9,6 +9,7 @@ import Vapor
 
 private let rootPathComponent = "poll"
 private let pollItemPathComponent = "item"
+private let votePathComponent = "vote"
 
 struct PollRouteCollection: RouteCollection {
   func boot(router: Router) throws {
@@ -25,7 +26,13 @@ struct PollRouteCollection: RouteCollection {
     itemTokenGroup.get(Models.PollItem.parameter, use: PollItemController.item)
     itemTokenGroup.grouped(Models.PollItem.parameter).put(Models.PollItem.UpdateRequest.self, use: PollItemController.update)
     itemTokenGroup.delete(Models.PollItem.parameter, use: PollItemController.delete)
+
+    let voteTokenGroup = tokenGroup.grouped(Models.Poll.parameter).grouped(votePathComponent)
+    voteTokenGroup.post(Models.Vote.Input.self, use: VoteController.vote)
+    voteTokenGroup.put(Models.Vote.Input.self, use: VoteController.unvote)
+
   }
+
 }
 
 enum PollController {
@@ -103,6 +110,60 @@ enum PollItemController {
   static func delete(_ req: Request) throws -> Future<HTTPStatus> {
     _ = try req.parameters.next(Models.Poll.self)
     return try req.parameters.next(Models.PollItem.self).delete(on: req).transform(to: .ok)
+  }
+
+}
+
+enum VoteController {
+
+  static func vote(_ req: Request, input: Models.Vote.Input) throws -> Future<Models.Poll.Public> {
+    let user = try req.requireAuthenticated(Models.User.self)
+
+    return try req.parameters.next(Models.Poll.self).flatMap { poll in
+
+      return try voteItem(for: user, with: input.itemId, in: poll, on: req).save(on: req).flatMap { _ in
+        try poll.public(on: req)
+      }
+
+    }
+
+  }
+
+  private static func alreadyVoted(user: Models.User, pollId: Models.Poll.ID, itemId: Models.PollItem.ID, on req: Request) throws -> Future<Bool> {
+    return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).count().map(to: Bool.self) { $0 > 0 }
+  }
+
+  private static func voteItem(for user: Models.User, with itemId: Models.PollItem.ID, in poll: Models.Poll, on req: Request) throws -> Future<Models.Vote> {
+    let userId = try user.requireID()
+    return try poll.pollItems.query(on: req).filter(\Models.PollItem.id, .equal, itemId).first().flatMap { item in
+      guard let pollItemId = item?.id, let pollId = poll.id else {
+        print("Vote Item not found")
+        throw Abort(.notFound)
+      }
+      return try alreadyVoted(user: user, pollId: pollId, itemId: itemId, on: req).map {
+        guard !$0 else {
+          print("user already voted")
+          throw Abort(.alreadyReported)
+        }
+        return Models.Vote(userId: userId, pollId: pollId, itemId: pollItemId)
+      }
+
+    }
+  }
+
+  static func unvote(_ req: Request, input: Models.Vote.Input) throws -> Future<Models.Poll.Public> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    
+    return try req.parameters.next(Models.Poll.self).flatMap(to: Models.Poll.Public.self) { poll in
+      guard let pollId = poll.id else {
+        throw Abort(.badRequest)
+      }
+      let itemId = input.itemId
+      return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).delete(force: true).flatMap(to: Models.Poll.Public.self) { _ in
+        return try poll.public(on: req)
+      }
+    }
+
   }
 
 }

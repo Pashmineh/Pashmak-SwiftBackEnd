@@ -8,6 +8,9 @@
 import FluentPostgreSQL
 import Vapor
 
+
+// MARK: - Poll -
+
 extension Models {
 
   final class Poll: PostgreSQLUUIDModel {
@@ -136,6 +139,8 @@ extension Models.Poll {
 }
 
 
+// MARK: - Poll Item -
+
 extension Models {
 
   final class PollItem: PostgreSQLUUIDModel {
@@ -231,3 +236,57 @@ extension Models.PollItem {
 }
 
 
+// MARK: - Vote -
+
+extension Models {
+
+  final class Vote: PostgreSQLUUIDModel {
+    var id: UUID?
+    var userId: User.ID
+    var pollId: Poll.ID
+    var itemId: PollItem.ID
+    var voteDate: Date
+
+    init(userId: User.ID, pollId: Poll.ID, itemId: PollItem.ID) {
+      self.userId = userId
+      self.pollId = pollId
+      self.itemId = itemId
+      self.voteDate = Date()
+    }
+
+  }
+
+}
+
+extension Models.Vote: Migration { }
+
+// MARK: Interface
+
+extension Models.Vote {
+
+  struct Input: Content {
+    let itemId: Models.PollItem.ID
+
+    func vote(for userId: Models.User.ID, on pollId: Models.Poll.ID) -> Models.Vote {
+      return Models.Vote(userId: userId, pollId: pollId, itemId: self.itemId)
+    }
+  }
+
+}
+
+// MARK: Relationships
+
+extension Models.Vote {
+
+  var user: Parent<Models.Vote, Models.User> {
+    return parent(\.userId)
+  }
+
+  var poll: Parent<Models.Vote, Models.Poll> {
+    return parent(\.pollId)
+  }
+
+  var pollItem: Parent<Models.Vote, Models.User> {
+    return parent(\.itemId)
+  }
+}

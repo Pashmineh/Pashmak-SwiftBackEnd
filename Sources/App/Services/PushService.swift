@@ -174,7 +174,7 @@ class PushService {
 
   @discardableResult
   func send(message: GORushConvertibale, to users: [Models.User], on worker: DatabaseConnectable) throws -> Future<Bool> {
-    print("Sending [\(users.count)] messages")
+    print("Sending message to [\(users.count)] users")
       return
         HTTPClient.connect(scheme: HTTPScheme.http, hostname: kPushBaseURL, port: kPushBaseURLPort, connectTimeout: TimeAmount.seconds(TimeAmount.Value(exactly: 30.0)!), on: worker)
         { print("Error connecting to push server.\n\($0.localizedDescription)") }
