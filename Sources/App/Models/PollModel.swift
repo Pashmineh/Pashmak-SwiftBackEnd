@@ -108,9 +108,10 @@ extension Models.Poll {
   }
 
   func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Poll> {
-    return conn.future(self).always {
-      PushService.shared.sendPollUpdate(on: conn)
-    }
+
+    return try self.pollItems.query(on: conn).delete(force: true)
+      .flatMap { return try self.votes.query(on: conn).delete(force: true).map { self } }
+      .always {  PushService.shared.sendPollUpdate(on: conn) }
   }
 
 }
@@ -119,6 +120,10 @@ extension Models.Poll {
 extension Models.Poll {
 
   var pollItems: Children<Models.Poll, Models.PollItem> {
+    return children(\.pollId)
+  }
+
+  var votes: Children<Models.Poll, Models.Vote> {
     return children(\.pollId)
   }
 
@@ -190,7 +195,9 @@ extension Models.PollItem {
   }
 
   func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
-    return conn.future(self).always {
+
+    return try self.votes.query(on: conn).delete(force: true).map { self }
+      .always {
       PushService.shared.sendPollUpdate(on: conn)
     }
   }
@@ -202,6 +209,10 @@ extension Models.PollItem {
 
   var poll: Parent<Models.PollItem, Models.Poll> {
     return parent(\.pollId)
+  }
+
+  var votes: Children<Models.PollItem, Models.Vote> {
+    return children(\.itemId)
   }
 
 }

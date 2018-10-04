@@ -68,9 +68,7 @@ enum PollController {
 
   static func delete(_ req: Request) throws -> Future<HTTPStatus> {
     return try req.parameters.next(Models.Poll.self).flatMap(to: HTTPStatus.self) { poll in
-      return try poll.pollItems.query(on: req).delete(force: true).flatMap(to: HTTPStatus.self) { _ in
-        poll.delete(on: req).transform(to: .ok)
-      }
+      return poll.delete(on: req).map { .ok }
     }
   }  
 
