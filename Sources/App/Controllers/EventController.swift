@@ -39,17 +39,18 @@ enum EventController {
   }
   
   static func list(_ req: Request) throws -> Future<[Models.Event.Public]> {
+//    return Models.Event.query(on: req).filter(\Models.Event.isEnabled, .equal, true).all().flatMap(to: [Models.Event.Public].self) { $0.map { $0.convertToPublic(on: req)}.flatten(on: req) }
     return Models.Event.query(on: req).filter(\Models.Event.isEnabled, .equal, true).all().flatMap(to: [Models.Event.Public].self) {events in
       let promise = req.eventLoop.newPromise([Models.Event.Public].self)
-      
+
       DispatchQueue.global().async {
         let publicEvents = events.compactMap { try? $0.convertToPublic(on: req).wait() }
         promise.succeed(result: publicEvents)
       }
-      
+
       return promise.futureResult
     }
-    
+
   }
   
   static func item(_ req: Request) throws -> Future<Models.Event.Public> {

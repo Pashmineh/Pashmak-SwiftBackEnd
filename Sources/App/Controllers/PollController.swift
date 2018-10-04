@@ -37,14 +37,8 @@ enum PollController {
 
   static func list(_ req: Request) throws -> Future<[Models.Poll.Public]> {
 
-      return Models.Poll.query(on: req).filter(\Models.Poll.isEnabled, .equal, true).all().flatMap(to: [Models.Poll.Public].self) { polls in
-        let promise = req.eventLoop.newPromise([Models.Poll.Public].self)
-        DispatchQueue.global().async {
-          let result = polls.compactMap { try? $0.public(on: req).wait() }
-          promise.succeed(result: result)
-        }
-        return promise.futureResult
-      }
+    return Models.Poll.query(on: req).filter(\Models.Poll.isEnabled, .equal, true).all()
+      .flatMap(to: [Models.Poll.Public].self) { try $0.map { try $0.public(on: req)}.flatten(on: req) }
   }
 
   static func item(_ req: Request) throws -> Future<Models.Poll.Public> {
