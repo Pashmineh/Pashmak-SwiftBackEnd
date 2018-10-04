@@ -194,3 +194,19 @@ class PushService {
   }
 
 }
+
+extension PushService {
+  func sendPollUpdate(on conn: DatabaseConnectable) {
+    Models.User.query(on: conn).all().do { users in
+      let updateMessage = PushService.UpdateMessage.init(type: .poll, event: .update)
+      do {
+        try PushService.shared.send(message: updateMessage, to: users, on: conn)
+      } catch {
+        print("Error sending update message for poll.\n\(error.localizedDescription)")
+      }
+      } .catch { error in
+        print("error sending poll update notification.\n\(error.localizedDescription)")
+    }
+    
+  }
+}

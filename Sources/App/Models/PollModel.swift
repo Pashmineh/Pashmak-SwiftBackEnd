@@ -96,37 +96,23 @@ extension Models.Poll {
 extension Models.Poll {
 
   func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Poll> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.Poll.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
   func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Poll> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.Poll.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
   func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Poll> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.Poll.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
-  func sendUpdate(to users: [Models.User], on conn: DatabaseConnectable) {
-    let updateMessage = PushService.UpdateMessage.init(type: .poll, event: .update)
-    do {
-      try PushService.shared.send(message: updateMessage, to: users, on: conn)
-    } catch {
-      print("Error sending update message for poll.\n\(error.localizedDescription)")
-    }
-  }
 }
 
 // MARK: Relationships
@@ -192,35 +178,20 @@ extension Models.PollItem {
   }
 
   func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
   func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
   func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
-    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
-      return conn.future(self).do { _ in
-        self.sendUpdate(to: users, on: conn)
-      }
-    }
-  }
-
-  func sendUpdate(to users: [Models.User], on conn: DatabaseConnectable) {
-    let updateMessage = PushService.UpdateMessage.init(type: .poll, event: .update)
-    do {
-      try PushService.shared.send(message: updateMessage, to: users, on: conn)
-    } catch {
-      print("Error sending update message for poll.\n\(error.localizedDescription)")
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
     }
   }
 
@@ -290,3 +261,29 @@ extension Models.Vote {
     return parent(\.itemId)
   }
 }
+
+// MARK: Notifications
+
+
+extension Models.Vote {
+
+  func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
+    }
+  }
+
+  func willDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
+    }
+  }
+
+  func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Vote> {
+    return conn.future(self).always {
+      PushService.shared.sendPollUpdate(on: conn)
+    }
+  }
+
+}
+

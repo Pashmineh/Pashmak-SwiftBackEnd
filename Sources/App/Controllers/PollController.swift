@@ -161,6 +161,10 @@ enum VoteController {
       let itemId = input.itemId
       return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).delete(force: true).flatMap(to: Models.Poll.Public.self) { _ in
         return try poll.public(on: req)
+        }.do { _ in
+          PushService.shared.sendPollUpdate(on: req)
+        }.catch {
+          print("Error sending poll update.\n\($0.localizedDescription)")
       }
     }
 
