@@ -150,6 +150,39 @@ extension Models.PollItem {
     return Public(id: self.id, title: self.title, imageSrc: self.imageSrc)
   }
 
+  func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
+    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
+      return conn.future(self).do { _ in
+        self.sendUpdate(to: users, on: conn)
+      }
+    }
+  }
+
+  func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
+    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
+      return conn.future(self).do { _ in
+        self.sendUpdate(to: users, on: conn)
+      }
+    }
+  }
+
+  func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
+    return Models.User.query(on: conn).all().flatMap(to: Models.PollItem.self) { users in
+      return conn.future(self).do { _ in
+        self.sendUpdate(to: users, on: conn)
+      }
+    }
+  }
+
+  func sendUpdate(to users: [Models.User], on conn: DatabaseConnectable) {
+    let updateMessage = PushService.UpdateMessage.init(type: .poll, event: .update)
+    do {
+      try PushService.shared.send(message: updateMessage, to: users, on: conn)
+    } catch {
+      print("Error sending update message for poll.\n\(error.localizedDescription)")
+    }
+  }
+
 }
 
 // MARK: Relationships

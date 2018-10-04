@@ -12,7 +12,7 @@ private let kPushBaseURL = "178.62.20.28"
 private let kPushBaseURLPort = 8088
 
 protocol GORushConvertibale {
-  func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage>
+  func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage>
 }
 
 class PushService {
@@ -33,7 +33,7 @@ class PushService {
       self.action = action
     }
 
-    func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage> {
+    func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage> {
 
       return users.compactMap { try? $0.devices.query(on: worker).all() }.flatMap(to: PushService.GORushMessage.self, on: worker) { devices in
         let devs = devices.flatMap { $0 }
@@ -84,7 +84,7 @@ class PushService {
     let event: EventType?
 
 
-    func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage> {
+    func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage> {
 
       var data: [String: String] = ["type": self.type.rawValue]
       if let event = self.event {
@@ -173,7 +173,7 @@ class PushService {
   static let shared: PushService = PushService()
 
   @discardableResult
-  func send(message: GORushConvertibale, to users: [Models.User], on worker: Request) throws -> Future<Bool> {
+  func send(message: GORushConvertibale, to users: [Models.User], on worker: DatabaseConnectable) throws -> Future<Bool> {
     print("Sending [\(users.count)] messages")
       return
         HTTPClient.connect(scheme: HTTPScheme.http, hostname: kPushBaseURL, port: kPushBaseURLPort, connectTimeout: TimeAmount.seconds(TimeAmount.Value(exactly: 30.0)!), on: worker)

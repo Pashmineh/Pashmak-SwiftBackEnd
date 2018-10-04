@@ -71,7 +71,7 @@ enum PollController {
         poll.delete(on: req).transform(to: .ok)
       }
     }
-  }
+  }  
 
 }
 
