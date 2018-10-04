@@ -82,6 +82,7 @@ extension Models.Event {
     var addressId: Models.Address.ID
     var imageURL: String
   }
+  
   struct UpdateRequest: Content {
     var title: String?
     var description: String?
