@@ -16,6 +16,7 @@ struct EventRouteCollection: RouteCollection {
     tokenGroup.get(use: EventController.list)
     tokenGroup.get(Models.Event.parameter, use: EventController.item)
     tokenGroup.put(Models.Event.parameter, use: EventController.update)
+    tokenGroup.delete(Models.Event.parameter, use: EventController.delete)
   }
 }
 
@@ -55,6 +56,10 @@ enum EventController {
     return try req.parameters.next(Models.Event.self).flatMap(to: Models.Event.Public.self) { event in
       return event.convertToPublic(on: req)
     }
+  }
+  
+  static func delete(_ req: Request) throws -> Future<HTTPStatus> {
+    return try req.parameters.next(Models.Event.self).delete(on: req).transform(to: HTTPStatus.ok)
   }
   
   static func update(_ req: Request) throws -> Future<Models.Event.Public> {

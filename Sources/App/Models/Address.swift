@@ -36,6 +36,17 @@ extension Models {
   
 }
 
+extension Models.Address {
+  
+  struct UpdateRequest: Content {
+    var title: String?
+    var street: String?
+    var lat: Double?
+    var long: Double?
+    var mapImageURL: String?
+  }
+}
+
 /// Allows `Address` to be encoded to and decoded from HTTP messages.
 extension Models.Address: Content { }
 

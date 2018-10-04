@@ -45,7 +45,7 @@ enum UserController {
                        avatarURL: user.avatarURL,
                        balance: user.balance)
       .save(on: req)
-      .transform(to: .ok)
+      .transform(to: .created)
   }
   
   static func get(_ req: Request) throws -> Models.User.Public {
