@@ -11,7 +11,7 @@ private let rootPathComponent = "address"
 
 struct AddressRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     tokenGroup.post(Models.Address.self, use: AddressController.create)
     tokenGroup.get(use: AddressController.list)
     tokenGroup.get(Models.Transaction.parameter, use: AddressController.item)

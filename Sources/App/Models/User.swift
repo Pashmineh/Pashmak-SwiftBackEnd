@@ -134,6 +134,7 @@ extension Models.User: TokenAuthenticatable {
   typealias TokenType = Models.UserToken
 }
 
+
 /// Validation User Inputs
 extension Models.User: Validatable {
   static func validations() throws -> Validations<Models.User> {
@@ -157,7 +158,6 @@ extension Models.User {
           } catch {
             print("error sending balance update push.\n\(error.localizedDescription)")
           }
-
       }
     }
   }
@@ -167,7 +167,21 @@ extension Models.User {
 /// Allows `User` to be encoded to and decoded from HTTP messages.
 extension Models.User: Content { }
 
-extension Models.User: Migration { }
+extension Models.User: Migration {
+  static func prepare(on connection: PostgreSQLConnection) -> Future<Void> {
+    return Database.create(self, on: connection) { builder in
+      try addProperties(to: builder)
+      builder.unique(on: \.phoneNumber)
+    }
+  }
+  
+  static func revert(on conn: PostgreSQLConnection) -> Future<Void> {
+    return Database.update(self, on: conn) { builder in
+      builder.deleteUnique(from: \.phoneNumber)
+    }
+  }
+  
+}
 
 /// Allows `User` to be used as a dynamic parameter in route definitions.
 extension Models.User: Parameter { }

@@ -71,6 +71,7 @@ class PushService {
       case transaction = "TRANSACTION"
       case home = "HOME"
       case poll = "POLL"
+      case event = "EVENT"
     }
 
     enum EventType: String, Codable {

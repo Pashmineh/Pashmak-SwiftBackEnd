@@ -11,7 +11,7 @@ private let rootPathComponent = "transaction"
 
 struct TransacrionRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     tokenGroup.post(Models.Transaction.CreateRequest.self, use: TransactionController.create)
     tokenGroup.get(use: TransactionController.list)
     tokenGroup.get(Models.Transaction.parameter, use: TransactionController.item)
