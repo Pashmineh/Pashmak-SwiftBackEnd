@@ -138,8 +138,14 @@ enum VoteController {
 
   }
 
-  private static func alreadyVoted(user: Models.User, pollId: Models.Poll.ID, itemId: Models.PollItem.ID, on req: Request) throws -> Future<Bool> {
-    return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).count().map(to: Bool.self) { $0 > 0 }
+  private static func alreadyVoted(user: Models.User, poll: Models.Poll, pollId: Models.Poll.ID, itemId: Models.PollItem.ID, on req: Request) throws -> Future<Bool> {
+    return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).count().flatMap(to: Bool.self) {
+      if $0 > 0 {
+        return req.future(true)
+      }
+
+      return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).count().map(to: Bool.self) { $0 >= poll.voteLimit }
+    }
   }
 
   private static func voteItem(for user: Models.User, with itemId: Models.PollItem.ID, in poll: Models.Poll, on req: Request) throws -> Future<Models.Vote> {
@@ -149,7 +155,8 @@ enum VoteController {
         print("Vote Item not found")
         throw Abort(.notFound)
       }
-      return try alreadyVoted(user: user, pollId: pollId, itemId: itemId, on: req).map {
+
+      return try alreadyVoted(user: user, poll: poll, pollId: pollId, itemId: itemId, on: req).map {
         guard !$0 else {
           print("user already voted")
           throw Abort(.alreadyReported)
