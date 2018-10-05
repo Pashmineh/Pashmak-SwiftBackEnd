@@ -156,12 +156,23 @@ enum VoteController {
         throw Abort(.notFound)
       }
 
-      return try alreadyVoted(user: user, poll: poll, pollId: pollId, itemId: itemId, on: req).map {
-        guard !$0 else {
-          print("user already voted")
-          throw Abort(.alreadyReported)
+      return try alreadyVoted(user: user, poll: poll, pollId: pollId, itemId: itemId, on: req).flatMap {
+
+        func addVote() -> Models.Vote {
+          return Models.Vote(userId: userId, pollId: pollId, itemId: pollItemId)
         }
-        return Models.Vote(userId: userId, pollId: pollId, itemId: pollItemId)
+
+        if $0  {
+          if poll.voteLimit == 1 {
+            return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).delete(force: true).map(to: Models.Vote.self) { _ in
+              return addVote()
+            }
+          } else {
+            throw Abort(.alreadyReported)
+          }
+        } else {
+          return req.future(addVote()) 
+        }
       }
 
     }
