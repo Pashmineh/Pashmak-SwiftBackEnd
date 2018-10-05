@@ -6,6 +6,7 @@
 //
 
 import Vapor
+import SwiftDate
 
 private let rootPathComponent = "poll"
 private let pollItemPathComponent = "item"
@@ -84,7 +85,7 @@ enum PollItemController {
   static func create(_ req: Request, createRequest: Models.PollItem.CreateRequest) throws -> Future<Models.PollItem.Public> {
     return try req.parameters.next(Models.Poll.self).flatMap(to: Models.PollItem.Public.self) {
       guard let pollId = $0.id else {
-        throw Abort(.badRequest)
+        throw Abort(.badRequest, reason: "PollID not found!")
       }
       return createRequest.pollItem(pollId: pollId).save(on: req).flatMap { try $0.public(for: UUID(), req) }
     }
@@ -129,7 +130,9 @@ enum VoteController {
     let userId = try user.requireID()
 
     return try req.parameters.next(Models.Poll.self).flatMap { poll in
-
+      guard !poll.isExpired else {
+        throw Abort(.preconditionFailed, reason: "Poll is expired")
+      }
       return try voteItem(for: user, with: input.itemId, in: poll, on: req).save(on: req).flatMap { _ in
         try poll.public(on: req, for: userId)
       }
@@ -152,8 +155,7 @@ enum VoteController {
     let userId = try user.requireID()
     return try poll.pollItems.query(on: req).filter(\Models.PollItem.id, .equal, itemId).first().flatMap { item in
       guard let pollItemId = item?.id, let pollId = poll.id else {
-        print("Vote Item not found")
-        throw Abort(.notFound)
+        throw Abort(.notFound, reason: "Vote item not found!")
       }
 
       return try alreadyVoted(user: user, poll: poll, pollId: pollId, itemId: itemId, on: req).flatMap {
@@ -168,7 +170,7 @@ enum VoteController {
               return addVote()
             }
           } else {
-            throw Abort(.alreadyReported)
+            throw Abort(.alreadyReported, reason: "You have already voted for this item!")
           }
         } else {
           return req.future(addVote()) 
@@ -183,15 +185,18 @@ enum VoteController {
     let userId = try user.requireID()
 
     return try req.parameters.next(Models.Poll.self).flatMap(to: Models.Poll.Public.self) { poll in
+      guard !poll.isExpired else {
+        throw Abort(.preconditionFailed, reason: "Poll is expired")
+      }
       guard let pollId = poll.id else {
-        throw Abort(.badRequest)
+        throw Abort(.badRequest, reason: "PollID not found!")
       }
       let itemId = input.itemId
-      return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).first().unwrap(or: Abort(.notFound)).flatMap(to: Models.Poll.Public.self) { vote in
+      return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).first().unwrap(or: Abort(.notFound, reason: "The vote cannot be found to unvote!")).flatMap(to: Models.Poll.Public.self) { vote in
         return vote.delete(on: req).flatMap { try poll.public(on: req, for: userId)}
         }
     }
 
   }
-
+  
 }

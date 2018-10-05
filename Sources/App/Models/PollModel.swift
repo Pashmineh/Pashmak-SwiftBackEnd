@@ -32,6 +32,11 @@ extension Models {
       self.expirationDate = expirationDate
       self.isEnabled = isEnabled
     }
+
+    var isExpired: Bool {
+      return Date(timeIntervalSince1970: self.expirationDate).isInFuture
+    }
+
   }
 
 }
