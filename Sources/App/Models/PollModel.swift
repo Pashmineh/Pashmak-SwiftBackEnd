@@ -80,13 +80,20 @@ extension Models.Poll {
     var isAnonymous: Bool
     var expirationDate: Double
     var pollItems: [Models.PollItem.Public]
+    var totalVotes: Int
   }
 
   func `public`(on req: Request) throws -> Future<Models.Poll.Public> {
 
-    return try self.pollItems.query(on: req).all().map(to: Models.Poll.Public.self) {
+    return try self.pollItems.query(on: req).all().flatMap(to: Models.Poll.Public.self) {
       let polltems = $0.map { $0.public }
-      return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: polltems)
+
+      return try self.votes.query(on: req).all()
+        .map { votes in
+          let voteCount = Array(Set(votes.map { $0.userId })).count
+          return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: polltems, totalVotes: voteCount)
+      }
+
     }
 
   }
