@@ -83,15 +83,15 @@ extension Models.Poll {
     var totalVotes: Int
   }
 
-  func `public`(on req: Request) throws -> Future<Models.Poll.Public> {
-
-    return try self.pollItems.query(on: req).all().flatMap(to: Models.Poll.Public.self) {
-      let polltems = $0.map { $0.public }
-
+  func `public`(on req: Request, for userId: Models.User.ID) throws -> Future<Models.Poll.Public> {    
+    return try self.pollItems.query(on: req).all().flatMap { pItems in
+      return try pItems.map { try $0.public(for: userId, req)}.flatten(on: req)
+      }.flatMap(to: Models.Poll.Public.self) { pItems in
       return try self.votes.query(on: req).all()
         .map { votes in
           let voteCount = Array(Set(votes.map { $0.userId })).count
-          return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: polltems, totalVotes: voteCount)
+          print("vote count for [\(userId)] is [\(voteCount)]")
+          return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: pItems, totalVotes: voteCount)
       }
 
     }
@@ -183,11 +183,23 @@ extension Models.PollItem {
     var id: UUID?
     var title: String
     var imageSrc: String?
+    var votesCount: Int
+    var isVoted: Bool
   }
 
-  var `public`: Public {
-    return Public(id: self.id, title: self.title, imageSrc: self.imageSrc)
+  func `public`(for userId: Models.User.ID, _ req: Request) throws -> Future<Models.PollItem.Public> {
+
+    return try self.votes.query(on: req).all().map { itemVotes in
+      let votesCount = itemVotes.count
+      let isVoted = itemVotes.first() { $0.userId == userId } != nil
+      return Public(id: self.id, title: self.title, imageSrc: self.imageSrc, votesCount: votesCount, isVoted: isVoted)
+    }
+
   }
+
+//  var `public`: Public {
+//    return Public(id: self.id, title: self.title, imageSrc: self.imageSrc)
+//  }
 
   func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.PollItem> {
     return conn.future(self).always {

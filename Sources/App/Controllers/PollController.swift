@@ -39,18 +39,23 @@ enum PollController {
 
   static func create(_ req: Request, createRequest: Models.Poll.CreateRequest) throws -> Future<Models.Poll.Public> {
 
-    return createRequest.poll().save(on: req).flatMap { try $0.public(on: req) }
+    return createRequest.poll().save(on: req).flatMap { try $0.public(on: req, for: UUID()) }
   }
 
   static func list(_ req: Request) throws -> Future<[Models.Poll.Public]> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    let userId = try user.requireID()
 
     return Models.Poll.query(on: req).filter(\Models.Poll.isEnabled, .equal, true).all()
-      .flatMap(to: [Models.Poll.Public].self) { try $0.map { try $0.public(on: req)}.flatten(on: req) }
+      .flatMap(to: [Models.Poll.Public].self) { try $0.map { try $0.public(on: req, for: userId)}.flatten(on: req) }
   }
 
   static func item(_ req: Request) throws -> Future<Models.Poll.Public> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    let userId = try user.requireID()
+
     _ = try req.requireAuthenticated(Models.User.self)
-    return try req.parameters.next(Models.Poll.self).flatMap { try $0.public(on: req) }
+    return try req.parameters.next(Models.Poll.self).flatMap { try $0.public(on: req, for: userId) }
   }
 
   static func update(_ req: Request, updateRequest: Models.Poll.UpdateRequest) throws -> Future<Models.Poll.Public> {
@@ -62,7 +67,7 @@ enum PollController {
       $0.isAnonymous = updateRequest.isAnonymous ?? $0.isAnonymous
       $0.expirationDate = updateRequest.expirationDate ?? $0.expirationDate
       $0.isEnabled = updateRequest.isEnabled ?? $0.isEnabled
-      return $0.save(on: req).flatMap { try $0.public(on: req) }
+      return $0.save(on: req).flatMap { try $0.public(on: req, for: UUID()) }
       }
   }
 
@@ -81,19 +86,24 @@ enum PollItemController {
       guard let pollId = $0.id else {
         throw Abort(.badRequest)
       }
-      return createRequest.pollItem(pollId: pollId).save(on: req).map { $0.public }
+      return createRequest.pollItem(pollId: pollId).save(on: req).flatMap { try $0.public(for: UUID(), req) }
     }
   }
 
   static func list(_ req: Request) throws -> Future<[Models.PollItem.Public]> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    let userId = try user.requireID()
     return try req.parameters.next(Models.Poll.self).flatMap(to: [Models.PollItem.Public].self) {
-      return try $0.pollItems.query(on: req).all().map(to: [Models.PollItem.Public].self){ $0.map { $0.public } }
+      return try $0.pollItems.query(on: req).all().flatMap(to: [Models.PollItem.Public].self){ return try $0.map { try $0.public(for: userId, req) }.flatten(on: req) }
     }
   }
 
   static func item(_ req: Request) throws -> Future<Models.PollItem.Public> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    let userId = try user.requireID()
+
     _ = try req.parameters.next(Models.Poll.self)
-    return try req.parameters.next(Models.PollItem.self).map { $0.public }
+    return try req.parameters.next(Models.PollItem.self).flatMap { try $0.public(for: userId, req) }
   }
 
   static func update(_ req: Request, updateRequest: Models.PollItem.UpdateRequest) throws -> Future<Models.PollItem.Public> {
@@ -101,7 +111,7 @@ enum PollItemController {
     return try req.parameters.next(Models.PollItem.self).flatMap(to: Models.PollItem.Public.self) {
       $0.title = updateRequest.title ?? $0.title
       $0.imageSrc = updateRequest.imageSrc ?? $0.imageSrc
-      return $0.save(on: req).map { $0.public }
+      return $0.save(on: req).flatMap { try $0.public(for: UUID(), req) }
     }
   }
 
@@ -116,11 +126,12 @@ enum VoteController {
 
   static func vote(_ req: Request, input: Models.Vote.Input) throws -> Future<Models.Poll.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
+    let userId = try user.requireID()
 
     return try req.parameters.next(Models.Poll.self).flatMap { poll in
 
       return try voteItem(for: user, with: input.itemId, in: poll, on: req).save(on: req).flatMap { _ in
-        try poll.public(on: req)
+        try poll.public(on: req, for: userId)
       }
 
     }
@@ -151,14 +162,15 @@ enum VoteController {
 
   static func unvote(_ req: Request, input: Models.Vote.Input) throws -> Future<Models.Poll.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
-    
+    let userId = try user.requireID()
+
     return try req.parameters.next(Models.Poll.self).flatMap(to: Models.Poll.Public.self) { poll in
       guard let pollId = poll.id else {
         throw Abort(.badRequest)
       }
       let itemId = input.itemId
       return try user.votes.query(on: req).filter(\Models.Vote.pollId, .equal, pollId).filter(\Models.Vote.itemId, .equal, itemId).first().unwrap(or: Abort(.notFound)).flatMap(to: Models.Poll.Public.self) { vote in
-        return vote.delete(on: req).flatMap { try poll.public(on: req)}
+        return vote.delete(on: req).flatMap { try poll.public(on: req, for: userId)}
         }
     }
 
