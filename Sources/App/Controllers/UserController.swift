@@ -43,7 +43,8 @@ enum UserController {
                        firstName: user.firstName,
                        lastName: user.lastName,
                        avatarURL: user.avatarURL,
-                       balance: user.balance)
+                       balance: user.balance,
+                       totalPaid: user.totalPaid)
       .save(on: req)
       .transform(to: .created)
   }

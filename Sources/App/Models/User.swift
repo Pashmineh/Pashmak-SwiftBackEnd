@@ -27,17 +27,19 @@ extension Models {
     var lastName: String
     var avatarURL: String
     var balance: Int64
+    var totalPaid: Int64
     
     static let entity = "User"
     
     /// Creates a new `User`.
-    init(phoneNumber: String, passwordHash: String, firstName: String, lastName: String, avatarURL: String, balance: Int64) {
+    init(phoneNumber: String, passwordHash: String, firstName: String, lastName: String, avatarURL: String, balance: Int64, totalPaid: Int64) {
       self.phoneNumber = phoneNumber
       self.passwordHash = passwordHash
       self.firstName = firstName
       self.lastName = lastName
       self.avatarURL = avatarURL
       self.balance = balance
+      self.totalPaid = totalPaid
     }
     
     struct JWT: JWTPayload {
@@ -62,13 +64,15 @@ extension Models {
       var lastName: String
       var avatarURL: String
       var balance: Int64
+      var totalPaid: Int64
       
-      init(phoneNumber: String, firstName: String, lastName: String, avatarURL: String, balance: Int64) {
+      init(phoneNumber: String, firstName: String, lastName: String, avatarURL: String, balance: Int64, totalPaid: Int64) {
         self.phoneNumber = phoneNumber
         self.firstName = firstName
         self.lastName = lastName
         self.avatarURL = avatarURL
         self.balance = balance
+        self.totalPaid = totalPaid
       }
     }
     
@@ -81,6 +85,7 @@ extension Models {
       var password: String
       var avatarURL: String
       var balance: Int64
+      var totalPaid: Int64
     }
     
     // Content required for Loging in A User
@@ -103,7 +108,8 @@ extension Models.User {
                               firstName: self.firstName,
                               lastName: self.lastName,
                               avatarURL: self.avatarURL,
-                              balance: self.balance)
+                              balance: self.balance,
+                              totalPaid: self.totalPaid)
   }
 }
 
@@ -149,7 +155,9 @@ extension Models.User {
   func updateBalance(_ req: Request) throws -> Future<Models.User.Public> {
     return try self.transactions.query(on: req).filter(\.isValid == true).all().flatMap(to: Models.User.Public.self) { transactions in
       let balance: Int64 = transactions.reduce(0) { $0 + $1.amount }
+      let totalPaid: Int64 = transactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
       self.balance = balance
+      self.totalPaid = totalPaid
       return self.save(on: req).map(to: Models.User.Public.self) { return $0.convertToPublic()}
         .do { _ in
           let msg = PushService.UpdateMessage(type: .profile, event: .update)
