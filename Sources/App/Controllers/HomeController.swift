@@ -6,7 +6,6 @@
 //
 
 import Vapor
-import SwiftDate
 
 private let rootPathComponent = "home"
 

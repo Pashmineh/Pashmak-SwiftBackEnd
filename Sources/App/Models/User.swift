@@ -59,6 +59,7 @@ extension Models {
     
     
     final class Public: Content {
+      var id: Models.User.ID
       var phoneNumber: String
       var firstName: String
       var lastName: String
@@ -66,7 +67,8 @@ extension Models {
       var balance: Int64
       var totalPaid: Int64
       
-      init(phoneNumber: String, firstName: String, lastName: String, avatarURL: String, balance: Int64, totalPaid: Int64) {
+      init(id: Models.User.ID, phoneNumber: String, firstName: String, lastName: String, avatarURL: String, balance: Int64, totalPaid: Int64) {
+        self.id = id
         self.phoneNumber = phoneNumber
         self.firstName = firstName
         self.lastName = lastName
@@ -104,7 +106,8 @@ extension Models {
 
 extension Models.User {
   func convertToPublic() -> Models.User.Public {
-    return Models.User.Public(phoneNumber: self.phoneNumber,
+    return Models.User.Public(id: self.id ?? UUID(),
+                              phoneNumber: self.phoneNumber,
                               firstName: self.firstName,
                               lastName: self.lastName,
                               avatarURL: self.avatarURL,
