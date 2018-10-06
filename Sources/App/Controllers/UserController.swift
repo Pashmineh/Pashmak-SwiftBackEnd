@@ -20,6 +20,7 @@ struct UserRouteCollection: RouteCollection {
     let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
     let logOutRoute = router.grouped("logout").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     let profileRoute = router.grouped("profile").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
+    let tokenGroup = router.grouped("token").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     
     // Open
     openGroup.post(Models.User.CreateRequest.self, use: UserController.create)
@@ -33,6 +34,9 @@ struct UserRouteCollection: RouteCollection {
 
     // Import Users
     openGroup.grouped("import").post([Models.User.ImportModel].self, use: UserController.import)
+
+    // Update Push
+    tokenGroup.put(Models.Device.PushUpdateRequest.self, use: UserController.updateToken)
 
   }
 }
@@ -83,6 +87,14 @@ enum UserController {
         loginInfo.device(for: userID) : device!
       dev.pushToken = loginInfo.pushToken
       return dev.save(on: req).transform(to: true)
+    }
+  }
+
+  static func updateToken(_ req: Request, updateInfo: Models.Device.PushUpdateRequest) throws -> Future<HTTPStatus> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try user.devices.query(on: req).filter(\.installationID == updateInfo.installationID).first().unwrap(or: Abort(.notFound, reason: "Could not find device")).flatMap {
+      $0.pushToken = updateInfo.token
+      return $0.save(on: req).transform(to: .ok)
     }
   }
 

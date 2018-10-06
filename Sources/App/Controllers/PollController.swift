@@ -6,7 +6,6 @@
 //
 
 import Vapor
-import SwiftDate
 
 private let rootPathComponent = "poll"
 private let pollItemPathComponent = "item"

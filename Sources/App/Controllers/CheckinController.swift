@@ -7,7 +7,6 @@
 
 import Vapor
 import FluentPostgreSQL
-import SwiftDate
 
 private let kTodayFormatter = DateFormatter.englishDateFormatterForTehran(with: "YYYY/MM/dd")
 private let kMessageDateFormatter = DateFormatter.farsiDateFormatter(with: "EEEE dd MMMM YYYY ساعت HH:mm")
