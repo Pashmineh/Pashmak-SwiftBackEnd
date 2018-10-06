@@ -98,6 +98,48 @@ extension Models {
   }
 }
 
+extension Models.Transaction {
+
+  func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+  }
+
+  func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+
+  }
+
+  func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+
+  }
+
+}
+
 /// Allows `Debt` to be encoded to and decoded from HTTP messages.
 extension Models.Transaction: Content { }
 

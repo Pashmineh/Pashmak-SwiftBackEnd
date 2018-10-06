@@ -155,7 +155,7 @@ extension Models.User: Validatable {
 
 extension Models.User {
   @discardableResult
-  func updateBalance(_ req: Request) throws -> Future<Models.User.Public> {
+  func updateBalance(_ req: DatabaseConnectable) throws -> Future<Models.User.Public> {
     return try self.transactions.query(on: req).filter(\.isValid == true).all().flatMap(to: Models.User.Public.self) { transactions in
       let balance: Int64 = transactions.reduce(0) { $0 + $1.amount }
       let totalPaid: Int64 = transactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }

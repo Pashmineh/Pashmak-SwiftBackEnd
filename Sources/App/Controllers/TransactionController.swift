@@ -48,13 +48,7 @@ enum TransactionController {
         catch {
           print("Error sending push.\n\(error.localizedDescription)")
         }
-      }.map(to: Models.Transaction.Public.self) { return $0.public }.always {
-        do {
-          try user.updateBalance(req)
-        } catch {
-          print("Error updating balance")
-        }
-    }
+      }.map(to: Models.Transaction.Public.self) { return $0.public }
 
   }
 
@@ -95,13 +89,7 @@ enum TransactionController {
                 print("Could not send update push.")
               }
 
-            }.always {
-              do {
-                try user.updateBalance(req)
-              } catch {
-                print("Error updating balance")
-              }
-            }
+            }           
 
         }
     }
