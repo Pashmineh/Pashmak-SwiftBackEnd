@@ -49,7 +49,7 @@ enum MessageController {
 
   static func list(_ req: Request) throws -> Future<[Models.Message.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.messages.query(on: req).sort(\.date, .descending).decode(data: Models.Message.Public.self).all()
+    return try user.messages.query(on: req).sort(\.date, .descending).all().map { $0.map { $0.public } }
   }
 
   static func item(_ req: Request) throws -> Future<Models.Message.Public> {
