@@ -15,7 +15,7 @@ private let rootPathComponent = "checkin"
 
 struct CheckinRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     tokenGroup.post(Models.Checkin.CreateRequest.self, use: CheckinController.create)
     tokenGroup.get(use: CheckinController.list)
     tokenGroup.get(Models.Checkin.parameter, use: CheckinController.item)

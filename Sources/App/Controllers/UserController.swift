@@ -18,8 +18,8 @@ struct UserRouteCollection: RouteCollection {
     let baseRouter = router.grouped(rootPathComponent)
     let openGroup = baseRouter.grouped("/")
     let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
-    let logOutRoute = router.grouped("logout").grouped(Models.User.tokenAuthMiddleware())
-    let profileRoute = router.grouped("profile").grouped(Models.User.tokenAuthMiddleware())
+    let logOutRoute = router.grouped("logout").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
+    let profileRoute = router.grouped("profile").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     
     // Open
     openGroup.post(Models.User.CreateRequest.self, use: UserController.create)
@@ -45,7 +45,7 @@ enum UserController {
                        avatarURL: user.avatarURL,
                        balance: user.balance)
       .save(on: req)
-      .transform(to: .ok)
+      .transform(to: .created)
   }
   
   static func get(_ req: Request) throws -> Models.User.Public {

@@ -12,7 +12,7 @@ private let kPushBaseURL = "178.62.20.28"
 private let kPushBaseURLPort = 8088
 
 protocol GORushConvertibale {
-  func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage>
+  func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage>
 }
 
 class PushService {
@@ -33,7 +33,7 @@ class PushService {
       self.action = action
     }
 
-    func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage> {
+    func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage> {
 
       return users.compactMap { try? $0.devices.query(on: worker).all() }.flatMap(to: PushService.GORushMessage.self, on: worker) { devices in
         let devs = devices.flatMap { $0 }
@@ -71,6 +71,7 @@ class PushService {
       case transaction = "TRANSACTION"
       case home = "HOME"
       case poll = "POLL"
+      case event = "EVENT"
     }
 
     enum EventType: String, Codable {
@@ -83,7 +84,7 @@ class PushService {
     let event: EventType?
 
 
-    func goRushMessage(for users: [Models.User], worker: Request) -> Future<PushService.GORushMessage> {
+    func goRushMessage(for users: [Models.User], worker: DatabaseConnectable) -> Future<PushService.GORushMessage> {
 
       var data: [String: String] = ["type": self.type.rawValue]
       if let event = self.event {
@@ -172,8 +173,8 @@ class PushService {
   static let shared: PushService = PushService()
 
   @discardableResult
-  func send(message: GORushConvertibale, to users: [Models.User], on worker: Request) throws -> Future<Bool> {
-    print("Sending [\(users.count)] messages")
+  func send(message: GORushConvertibale, to users: [Models.User], on worker: DatabaseConnectable) throws -> Future<Bool> {
+    print("Sending message to [\(users.count)] users")
       return
         HTTPClient.connect(scheme: HTTPScheme.http, hostname: kPushBaseURL, port: kPushBaseURLPort, connectTimeout: TimeAmount.seconds(TimeAmount.Value(exactly: 30.0)!), on: worker)
         { print("Error connecting to push server.\n\($0.localizedDescription)") }
@@ -192,4 +193,20 @@ class PushService {
 
   }
 
+}
+
+extension PushService {
+  func sendPollUpdate(on conn: DatabaseConnectable) {
+    Models.User.query(on: conn).all().do { users in
+      let updateMessage = PushService.UpdateMessage.init(type: .poll, event: .update)
+      do {
+        try PushService.shared.send(message: updateMessage, to: users, on: conn)
+      } catch {
+        print("Error sending update message for poll.\n\(error.localizedDescription)")
+      }
+      } .catch { error in
+        print("error sending poll update notification.\n\(error.localizedDescription)")
+    }
+    
+  }
 }

@@ -11,7 +11,7 @@ private let rootPathComponent = "message"
 
 struct MessageRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     tokenGroup.post(Models.Message.createRequest.self, use: MessageController.create)
     tokenGroup.get(use: MessageController.list)
     tokenGroup.get(Models.Message.parameter, use: MessageController.item)
