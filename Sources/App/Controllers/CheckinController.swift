@@ -96,7 +96,7 @@ enum CheckinController {
 
   static func list(_ req: Request) throws -> Future<[Models.Checkin.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).decode(data: Models.Checkin.Public.self).all()
+    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).all().map { return $0.map { $0.public } }
   }
 
   static func item(_ req: Request) throws -> Future<Models.Checkin.Public> {

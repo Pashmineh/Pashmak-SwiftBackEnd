@@ -71,7 +71,7 @@ extension Models.Event {
   
   func convertToPublic(on req : Request) -> Future<Models.Event.Public> {
     return Models.Address.find(self.addressId, on: req).unwrap(or: Abort(.badRequest)).map(to: Models.Event.Public.self) { address in
-      return Models.Event.Public(id: self.id, title: self.title, description: self.description, dateEpoch: self.date.timeIntervalSince1970 * 10, address: address, imageURL: self.imageURL)
+      return Models.Event.Public(id: self.id, title: self.title, description: self.description, dateEpoch: self.date.timeIntervalSince1970 * 1000, address: address, imageURL: self.imageURL)
     }
   }
   
