@@ -21,8 +21,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
   services.register(middlewares)
 
-//  let serverConfiure = NIOServerConfig.default(hostname: "0.0.0.0", port: 9090)
-//  services.register(serverConfiure)
+  let serverConfiure = NIOServerConfig.default(hostname: "0.0.0.0", port: 8080)
+  services.register(serverConfiure)
 
 
   var databases = DatabasesConfig()

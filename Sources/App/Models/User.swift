@@ -212,3 +212,26 @@ extension Models.User {
   }
 
 }
+
+extension Models.User {
+
+  struct ImportModel: Content {
+
+    var login: String
+    var password: String
+    var firstName: String
+    var lastName: String
+    var email: String
+    var imageUrl: String?
+    var platform: String?
+
+  }
+
+  struct ImportResult: Content {
+
+    var inserted: Int
+    var error: Int
+
+  }
+
+}

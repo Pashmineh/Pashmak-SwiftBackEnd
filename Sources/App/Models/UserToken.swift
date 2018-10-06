@@ -80,6 +80,23 @@ extension Models.UserToken: Token {
   }
 }
 
+extension Models.UserToken {
+
+  struct Public: Content {
+
+    var token: String
+    var name: String
+    var lastName: String
+    var avatar: String?
+
+  }
+
+  func publicApi(for user: Models.User) -> Models.UserToken.Public {
+    return Models.UserToken.Public(token: self.string, name: user.firstName, lastName: user.lastName, avatar: user.avatarURL)
+  }
+
+}
+
 
 extension Models.UserToken: Migration { }
 
