@@ -83,12 +83,12 @@ extension Models {
       var reason: String
       var message: String?
       var isValid: Bool
-      var date: Double
+      var dateEpoch: Double
 
     }
 
     var `public`: Public {
-      return Public(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, date: self.date)
+      return Public(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, dateEpoch: self.date * 1000.0)
     }
 
     struct UpdateRequest: Content {

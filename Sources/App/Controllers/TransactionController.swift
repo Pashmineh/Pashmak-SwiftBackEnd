@@ -59,7 +59,7 @@ enum TransactionController {
 
   static func list(_ req: Request) throws -> Future<[Models.Transaction.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.transactions.query(on: req).sort(\.date, .descending).decode(data: Models.Transaction.Public.self).all()
+    return try user.transactions.query(on: req).sort(\.date, .descending).all().map { $0.map { $0.public }}
   }
 
   static func item(_ req: Request) throws -> Future<Models.Transaction.Public> {
