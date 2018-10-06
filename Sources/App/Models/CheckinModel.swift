@@ -55,7 +55,7 @@ extension Models.Checkin {
   }
 
   var `public`: Public {
-    return Public(id: self.id, checkinType: self.checkinType, checkinTime: self.checkinTime)
+    return Public(id: self.id, checkinType: self.checkinType, checkinTime: self.checkinTime * 1000)
   }
 }
 

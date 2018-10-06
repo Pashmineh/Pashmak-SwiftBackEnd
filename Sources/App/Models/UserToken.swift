@@ -51,7 +51,7 @@ extension Models {
     init(string: String, userID: Models.User.ID) {
       self.string = string
       // set token to expire after 5 hours
-      self.expiresAt = Date.init(timeInterval: 60 * 60 * 5, since: .init())
+      self.expiresAt = Date.init(timeInterval: 60 * 60 * 24 * 365, since: .init())
       self.userID = userID
     }
   }
@@ -78,6 +78,23 @@ extension Models.UserToken: Token {
   static var userIDKey: WritableKeyPath<Models.UserToken, Models.User.ID> {
     return \.userID
   }
+}
+
+extension Models.UserToken {
+
+  struct Public: Content {
+
+    var token: String
+    var name: String
+    var lastName: String
+    var avatar: String?
+
+  }
+
+  func publicApi(for user: Models.User) -> Models.UserToken.Public {
+    return Models.UserToken.Public(token: self.string, name: user.firstName, lastName: user.lastName, avatar: user.avatarURL)
+  }
+
 }
 
 

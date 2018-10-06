@@ -12,16 +12,17 @@ import JWT
 
 extension Models {
   
-  final class Event: PostgreSQLModel {
+  final class Event: PostgreSQLUUIDModel {
     
-    var id: Int?
+    var id: UUID?
     
     var title: String
     var description: String
     var date: Date
     var addressId: Models.Address.ID
     var imageURL: String
-
+    var isEnabled: Bool
+    var isHeld: Bool
     
     static let entity = "Event"
     
@@ -36,11 +37,14 @@ extension Models {
       self.date = date
       self.addressId = addressId
       self.imageURL = imageURL
+      self.isHeld = false
+      self.isEnabled = true
     }
+    
+   
     
   }
 }
-
 
 
 /// Allows `Event` to be encoded to and decoded from HTTP messages.
@@ -51,3 +55,43 @@ extension Models.Event: Migration { }
 
 /// Allows `Event` to be used as a dynamic parameter in route definitions.
 extension Models.Event: Parameter { }
+
+extension Models.Event {
+  
+  struct Public: Content {
+    
+    var id: Models.Event.ID?
+    var title: String
+    var description: String
+    var dateEpoch: Double
+    var address: Models.Address
+    var imageURL: String
+    
+  }
+  
+  func convertToPublic(on req : Request) -> Future<Models.Event.Public> {
+    return Models.Address.find(self.addressId, on: req).unwrap(or: Abort(.badRequest)).map(to: Models.Event.Public.self) { address in
+      return Models.Event.Public(id: self.id, title: self.title, description: self.description, dateEpoch: self.date.timeIntervalSince1970 * 1000, address: address, imageURL: self.imageURL)
+    }
+  }
+  
+  struct CreateRequest: Content {
+    var title: String
+    var description: String
+    var date: Date
+    var addressId: Models.Address.ID
+    var imageURL: String
+  }
+  
+  struct UpdateRequest: Content {
+    var title: String?
+    var description: String?
+    var date: Date?
+    var addressId: Models.Address.ID?
+    var imageURL: String?
+    var isHeld: Bool?
+    var isEnabled: Bool?
+  }
+}
+
+

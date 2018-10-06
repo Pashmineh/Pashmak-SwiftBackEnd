@@ -18,8 +18,9 @@ struct UserRouteCollection: RouteCollection {
     let baseRouter = router.grouped(rootPathComponent)
     let openGroup = baseRouter.grouped("/")
     let basicGroup = router.grouped("login").grouped(Models.User.basicAuthMiddleware(using: BCryptDigest()))
-    let logOutRoute = router.grouped("logout").grouped(Models.User.tokenAuthMiddleware())
-    let profileRoute = router.grouped("profile").grouped(Models.User.tokenAuthMiddleware())
+    let logOutRoute = router.grouped("logout").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
+    let profileRoute = router.grouped("profile").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
+    let tokenGroup = router.grouped("token").grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
     
     // Open
     openGroup.post(Models.User.CreateRequest.self, use: UserController.create)
@@ -30,7 +31,13 @@ struct UserRouteCollection: RouteCollection {
     // Token APIs
     logOutRoute.get(use: UserController.logout)
     profileRoute.get(use: UserController.get)
-    
+
+    // Import Users
+    openGroup.grouped("import").post([Models.User.ImportModel].self, use: UserController.import)
+
+    // Update Push
+    tokenGroup.put(Models.Device.PushUpdateRequest.self, use: UserController.updateToken)
+
   }
 }
 
@@ -43,9 +50,10 @@ enum UserController {
                        firstName: user.firstName,
                        lastName: user.lastName,
                        avatarURL: user.avatarURL,
-                       balance: user.balance)
+                       balance: user.balance,
+                       totalPaid: user.totalPaid)
       .save(on: req)
-      .transform(to: .ok)
+      .transform(to: .created)
   }
   
   static func get(_ req: Request) throws -> Models.User.Public {
@@ -62,12 +70,12 @@ enum UserController {
       .transform(to: .ok)
   }
   
-  static func login(_ req: Request, loginInfo: Models.User.LoginRequest) throws -> Future<Models.UserToken> {
+  static func login(_ req: Request, loginInfo: Models.User.LoginRequest) throws -> Future<Models.UserToken.Public> {
     let user = try req.requireAuthenticated(Models.User.self)
     let userPayload: Models.User.JWT = Models.User.JWT(id: user.id, phoneNumber: user.phoneNumber)
     let token = try Models.UserToken.createJWTToken(payload: userPayload)
-    return try insertOrUpdateDevice(req, loginInfo: loginInfo).flatMap(to: Models.UserToken.self) { _ in
-      return token.save(on: req)
+    return try insertOrUpdateDevice(req, loginInfo: loginInfo).flatMap { _ in
+      return token.save(on: req).map { $0.publicApi(for: user) }
     }
   }
   
@@ -80,5 +88,39 @@ enum UserController {
       dev.pushToken = loginInfo.pushToken
       return dev.save(on: req).transform(to: true)
     }
+  }
+
+  static func updateToken(_ req: Request, updateInfo: Models.Device.PushUpdateRequest) throws -> Future<HTTPStatus> {
+    let user = try req.requireAuthenticated(Models.User.self)
+    return try user.devices.query(on: req).filter(\.installationID == updateInfo.installationID).first().unwrap(or: Abort(.notFound, reason: "Could not find device")).flatMap {
+      $0.pushToken = updateInfo.token
+      return $0.save(on: req).transform(to: .ok)
+    }
+  }
+
+  static func `import`(_ req: Request, importData: [Models.User.ImportModel]) throws -> Future<Models.User.ImportResult> {
+
+    let promise = req.eventLoop.newPromise(Models.User.ImportResult.self)
+
+    DispatchQueue.global(qos: .background).async {
+      var successCount = 0
+      var errorCount = 0
+      importData.forEach {
+        do {
+          let passwordHash = try BCrypt.hash($0.password)
+          let _ = try Models.User(phoneNumber: $0.login, passwordHash: passwordHash, firstName: $0.firstName, lastName: $0.lastName, avatarURL: $0.imageUrl ?? "", balance: 0, totalPaid: 0).save(on: req).wait()
+          successCount += 1
+        } catch {
+          errorCount += 1
+          print("Error saving import data for: [\($0)]\n\(error.localizedDescription)")
+        }
+
+      }
+
+      let result = Models.User.ImportResult(inserted: successCount, error: errorCount)
+      promise.succeed(result: result)
+    }
+
+    return promise.futureResult
   }
 }

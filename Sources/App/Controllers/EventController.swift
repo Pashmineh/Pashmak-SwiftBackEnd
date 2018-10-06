@@ -11,29 +11,90 @@ private let rootPathComponent = "event"
 
 struct EventRouteCollection: RouteCollection {
   func boot(router: Router) throws {
-    let tokenGroup = router.grouped(rootPathComponent).grouped(Models.User.tokenAuthMiddleware())
-    tokenGroup.post(Models.Event.self, use: EventController.create)
+    let tokenGroup = router.grouped(rootPathComponent).grouped([Models.User.tokenAuthMiddleware(), Models.User.guardAuthMiddleware()])
+    tokenGroup.post(Models.Event.CreateRequest.self, use: EventController.create)
     tokenGroup.get(use: EventController.list)
     tokenGroup.get(Models.Event.parameter, use: EventController.item)
     tokenGroup.put(Models.Event.parameter, use: EventController.update)
+    tokenGroup.delete(Models.Event.parameter, use: EventController.delete)
   }
 }
 
 enum EventController {
   
-  static func create(_ req: Request, event: Models.Event) throws -> Future<Models.Event> {
-    return event.save(on: req)
+  static func create(_ req: Request, eventInfo: Models.Event.CreateRequest) throws -> Future<Models.Event.Public> {
+    
+    // Create Event Object for Save in Database
+    let event = Models.Event(title: eventInfo.title,
+                             description: eventInfo.description,
+                             date: eventInfo.date,
+                             addressId: eventInfo.addressId,
+                             imageURL: eventInfo.imageURL)
+    
+    // Save and Return Public Model
+    return event.save(on: req).flatMap(to: Models.Event.Public.self) { event in
+      return event.convertToPublic(on: req)
+    }
+    
   }
   
-  static func list(_ req: Request) throws -> Future<[Models.Address]> {
-    return Models.Address.query(on: req).all()
+  static func list(_ req: Request) throws -> Future<[Models.Event.Public]> {
+    return Models.Event.query(on: req).filter(\Models.Event.isEnabled, .equal, true).all()
+      .flatMap(to: [Models.Event.Public].self) { $0.map { $0.convertToPublic(on: req)}.flatten(on: req) }
+
   }
   
-  static func item(_ req: Request) throws -> Future<Models.Address> {
-    return try req.parameters.next(Models.Address.self)
+  static func item(_ req: Request) throws -> Future<Models.Event.Public> {
+    return try req.parameters.next(Models.Event.self).flatMap(to: Models.Event.Public.self) { event in
+      return event.convertToPublic(on: req)
+    }
   }
   
-  static func update(_ req: Request) throws -> Future<Models.Address> {
-    fatalError()
+  static func delete(_ req: Request) throws -> Future<HTTPStatus> {
+    return try req.parameters.next(Models.Event.self).delete(on: req).transform(to: HTTPStatus.ok)
+  }
+  
+  static func update(_ req: Request) throws -> Future<Models.Event.Public> {
+    return try req.parameters.next(Models.Event.self).flatMap(to: Models.Event.Public.self) { event in
+      return try req.content.decode(Models.Event.UpdateRequest.self).flatMap(to: Models.Event.Public.self) {updateRequest in
+        
+        // Update title if presents in Update Request
+        if let title = updateRequest.title {
+          event.title = title
+        }
+        
+        // Update description if presents in Update Request
+        if let description = updateRequest.description {
+          event.description = description
+        }
+        
+        // Update date if presents in Update Request
+        if let date = updateRequest.date {
+          event.date = date
+        }
+        
+        // Update addressId if presents in Update Request
+        if let addressId = updateRequest.addressId {
+          event.addressId = addressId
+        }
+        
+        // Update imageURL if presents in Update Request
+        if let imageURL = updateRequest.imageURL {
+          event.imageURL = imageURL
+        }
+        
+        // Update isHeld if presents in Update Request
+        if let isHeld = updateRequest.isHeld {
+          event.isHeld = isHeld
+        }
+        
+        // Update isEnabled if presents in Update Request
+        if let isEnabled = updateRequest.isEnabled {
+          event.isEnabled = isEnabled
+        }
+        
+        return event.save(on: req).flatMap(to: Models.Event.Public.self) { $0.convertToPublic(on: req) }
+      }
+    }
   }
 }

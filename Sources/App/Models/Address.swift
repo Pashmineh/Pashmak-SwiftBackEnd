@@ -34,8 +34,17 @@ extension Models {
     }
   }
   
+}
+
+extension Models.Address {
   
-  
+  struct UpdateRequest: Content {
+    var title: String?
+    var street: String?
+    var lat: Double?
+    var long: Double?
+    var mapImageURL: String?
+  }
 }
 
 /// Allows `Address` to be encoded to and decoded from HTTP messages.
@@ -46,3 +55,6 @@ extension Models.Address: Migration { }
 
 /// Allows `Address` to be used as a dynamic parameter in route definitions.
 extension Models.Address: Parameter { }
+
+
+
