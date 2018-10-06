@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   api:
-    image: Swift:4.2
+    image: swift:4.1
     ports:
       - 8080:8080
     volumes:
