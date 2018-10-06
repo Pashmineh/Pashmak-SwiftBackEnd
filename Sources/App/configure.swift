@@ -6,6 +6,12 @@ import Authentication
 /// Called before your application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
   
+  let POSTGRESQL_HOST = Environment.get("POSTGRESQL_HOST") ?? "localhost"
+  let POSTGRESQL_USENAME = Environment.get("POSTGRESQL_USENAME") ?? "postgres"
+  let POSTGRESQL_PASSWORD = Environment.get("POSTGRESQL_PASSWORD") ?? "Ala123456"
+  let REDIS_HOST = Environment.get("REDIS_HOST") ?? "localhost"
+
+
   try services.register(FluentPostgreSQLProvider())
   try services.register(AuthenticationProvider())
   try services.register(RedisProvider())
@@ -24,21 +30,23 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
   let serverConfiure = NIOServerConfig.default(hostname: "0.0.0.0", port: 8080)
   services.register(serverConfiure)
 
+  // Wait for postgres startUp
+  sleep(5)
 
   var databases = DatabasesConfig()
   
   // PostgreSQL
-  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: "178.62.20.28",
+  let postgres = PostgreSQLDatabase(config: PostgreSQLDatabaseConfig(hostname: POSTGRESQL_HOST,
                                                                      port: 5432,
-                                                                     username: "postgres",
+                                                                     username: POSTGRESQL_USENAME,
                                                                      database: nil,
-                                                                     password: "Ala123456",
+                                                                     password: POSTGRESQL_PASSWORD,
                                                                      transport: PostgreSQLConnection.TransportConfig.cleartext))
   
   databases.add(database: postgres, as: .psql)
   
   // Redis
-  let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: "178.62.20.28:6379")!))
+  let redis = try RedisDatabase(config: RedisClientConfig(url: URL(string: REDIS_HOST)!))
   databases.add(database: redis, as: .redis)
   
   services.register(databases)
