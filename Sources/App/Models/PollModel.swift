@@ -34,7 +34,7 @@ extension Models {
     }
 
     var isExpired: Bool {
-      return Date(timeIntervalSince1970: self.expirationDate).isInFuture
+      return self.expirationDate > Date().timeIntervalSince1970
     }
 
   }
