@@ -83,7 +83,7 @@ extension Models.Poll {
     var imageSrc: String?
     var voteLimit: Int
     var isAnonymous: Bool
-    var expirationDate: Double
+    var expirationDateEpoch: Double
     var pollItems: [Models.PollItem.Public]
     var totalVotes: Int
   }
@@ -95,7 +95,7 @@ extension Models.Poll {
       return try self.votes.query(on: req).all()
         .map { votes in
           let voteCount = Array(Set(votes.map { $0.userId })).count          
-          return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDate: self.expirationDate, pollItems: pItems, totalVotes: voteCount)
+          return Public(id: self.id, title: self.title, description: self.description, imageSrc: self.imageSrc, voteLimit: self.voteLimit, isAnonymous: self.isAnonymous, expirationDateEpoch: self.expirationDate * 1000.0, pollItems: pItems, totalVotes: voteCount)
       }
 
     }
