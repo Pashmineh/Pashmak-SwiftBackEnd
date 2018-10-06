@@ -83,12 +83,12 @@ extension Models {
       var reason: String
       var message: String?
       var isValid: Bool
-      var date: Double
+      var dateEpoch: Double
 
     }
 
     var `public`: Public {
-      return Public(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, date: self.date)
+      return Public(id: self.id, amount: self.amount, reason: self.reason, message: self.message, isValid: self.isValid, dateEpoch: self.date * 1000.0)
     }
 
     struct UpdateRequest: Content {
@@ -96,6 +96,48 @@ extension Models {
       var isValid: Bool?
     }
   }
+}
+
+extension Models.Transaction {
+
+  func didCreate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+  }
+
+  func didUpdate(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+
+  }
+
+  func didDelete(on conn: PostgreSQLConnection) throws -> EventLoopFuture<Models.Transaction> {
+    return self.user.query(on: conn).first().map {
+      do {
+        try $0?.updateBalance(conn)
+      } catch {
+        print("Could not update Balance.")
+      }
+
+      return self
+    }
+
+  }
+
 }
 
 /// Allows `Debt` to be encoded to and decoded from HTTP messages.

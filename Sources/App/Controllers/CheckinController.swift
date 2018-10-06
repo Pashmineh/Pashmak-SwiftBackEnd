@@ -7,7 +7,6 @@
 
 import Vapor
 import FluentPostgreSQL
-import SwiftDate
 
 private let kTodayFormatter = DateFormatter.englishDateFormatterForTehran(with: "YYYY/MM/dd")
 private let kMessageDateFormatter = DateFormatter.farsiDateFormatter(with: "EEEE dd MMMM YYYY ساعت HH:mm")
@@ -67,7 +66,7 @@ enum CheckinController {
                   print("Error sending penalty message.\n\(error.localizedDescription)")
                 }
             }
-          }
+          }            
         } else {
           return addCheckin()
         }
@@ -97,7 +96,7 @@ enum CheckinController {
 
   static func list(_ req: Request) throws -> Future<[Models.Checkin.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).decode(data: Models.Checkin.Public.self).all()
+    return try user.checkins.query(on: req).sort(\.checkinTime, .descending).all().map { return $0.map { $0.public } }
   }
 
   static func item(_ req: Request) throws -> Future<Models.Checkin.Public> {

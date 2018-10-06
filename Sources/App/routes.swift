@@ -24,5 +24,8 @@ public func routes(_ router: Router) throws {
 
   let pollRoutes = PollRouteCollection()
   try router.register(collection: pollRoutes)
+
+  let homeRoutes = HomeRoutesCollection()
+  try router.register(collection: homeRoutes)
   
 }

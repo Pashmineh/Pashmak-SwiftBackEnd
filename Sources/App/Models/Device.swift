@@ -27,7 +27,6 @@ extension Models {
       self.userId = userId
     }
   }
-  
  
 }
 
@@ -35,6 +34,13 @@ extension Models {
 extension Models.Device {
   var user: Parent<Models.Device, Models.User> {
     return parent(\.userId)
+  }
+}
+
+extension Models.Device {
+  struct PushUpdateRequest: Content {
+    var token: String
+    var installationID: String
   }
 }
 

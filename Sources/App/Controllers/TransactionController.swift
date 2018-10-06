@@ -54,11 +54,12 @@ enum TransactionController {
 
   static func addNewTransaction(userID: Models.User.ID, createRequest: Models.Transaction.CreateRequest, on conn: DatabaseConnectable) -> Future<Models.Transaction> {
     return createRequest.transaction(for: userID).save(on: conn)
+
   }
 
   static func list(_ req: Request) throws -> Future<[Models.Transaction.Public]> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return try user.transactions.query(on: req).sort(\.date, .descending).decode(data: Models.Transaction.Public.self).all()
+    return try user.transactions.query(on: req).sort(\.date, .descending).all().map { $0.map { $0.public }}
   }
 
   static func item(_ req: Request) throws -> Future<Models.Transaction.Public> {
@@ -88,13 +89,7 @@ enum TransactionController {
                 print("Could not send update push.")
               }
 
-            }.always {
-              do {
-                try user.updateBalance(req)
-              } catch {
-                print("Error updating balance")
-              }
-            }
+            }           
 
         }
     }

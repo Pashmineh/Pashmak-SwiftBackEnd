@@ -50,13 +50,13 @@ extension Models.Message {
   struct Public: Content {
     var title: String
     var body: String
-    var date: Double
+    var dateEpoch: Double
     var id: Models.Message.ID?
 
   }
 
   var `public`: Models.Message.Public {
-    return Models.Message.Public(title: self.title, body: self.body, date: self.date, id: self.id)
+    return Models.Message.Public(title: self.title, body: self.body, dateEpoch: self.date * 1000, id: self.id)
   }
 
 }
