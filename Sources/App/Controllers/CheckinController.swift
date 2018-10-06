@@ -66,6 +66,12 @@ enum CheckinController {
                   print("Error sending penalty message.\n\(error.localizedDescription)")
                 }
             }
+            }.always {
+              do {
+                try user.updateBalance(req)
+              } catch {
+                print("Could not update balance!\n\(error.localizedDescription)")
+              }
           }
         } else {
           return addCheckin()
