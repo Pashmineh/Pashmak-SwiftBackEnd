@@ -8,7 +8,7 @@
 import FluentPostgreSQL
 import Vapor
 
-private let kCycleDateFormatter = DateFormatter.farsiDateFormatter(with: "MMMM YY")
+private let kCycleDateFormatter: DateFormatter = DateFormatter.farsiDateFormatter(with: "EEEE dd MMMM YYYY ساعت HH:mm")
 
 extension Models {
 
@@ -25,8 +25,7 @@ extension Models {
 
     init(user: Models.User, events: [Event.Public]) {
       self.events = events
-      let formatter = DateFormatter.farsiDateFormatter(with: "MMMM YY")
-      self.cycle = formatter.string(from: Date())
+      self.cycle = kCycleDateFormatter.string(from: Date())
       self.balance = Balance(balance: user.balance, totalPaid: user.totalPaid)
     }
 
