@@ -25,7 +25,7 @@ extension Models {
 
     init(user: Models.User, events: [Event.Public]) {
       self.events = events
-      self.cycle = kCycleDateFormatter.string(from: Date())
+      self.cycle = ""//kCycleDateFormatter.string(from: Date())
       self.balance = Balance(balance: user.balance, totalPaid: user.totalPaid)
     }
 
