@@ -1,4 +1,4 @@
-[![codebeat badge](https://codebeat.co/badges/ce89e818-a4da-4ec6-ac5e-8f4fdeb09f71)](https://codebeat.co/projects/github-com-pashmineh-pashmak-swiftbackend-master)
+
 <p align="center">
     <img src="https://user-images.githubusercontent.com/1342803/36623515-7293b4ec-18d3-11e8-85ab-4e2f8fb38fbd.png" width="320" alt="API Template">
     <br>
@@ -18,4 +18,5 @@
     <a href="https://swift.org">
         <img src="http://img.shields.io/badge/swift-4.1-brightgreen.svg" alt="Swift 4.1">
     </a>
+    <a href="https://codebeat.co/projects/github-com-pashmineh-pashmak-swiftbackend-master"><img alt="codebeat badge" src="https://codebeat.co/badges/ce89e818-a4da-4ec6-ac5e-8f4fdeb09f71" /></a>
 </p>
