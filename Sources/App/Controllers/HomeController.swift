@@ -22,11 +22,10 @@ enum HomeController {
 
   static func list(_ req: Request) throws -> Future<Models.Home> {
     let user = try req.requireAuthenticated(Models.User.self)
-    return req.future(Models.Home(user: user, events: []))
-//    return Models.Event.query(on: req).filter(\Models.Event.isEnabled, .equal, true).all()
-//      .flatMap { $0.map { $0.convertToPublic(on: req)}.flatten(on: req) }.map {
-//        Models.Home(user: user, events: $0)
-//    }
+    return Models.Event.query(on: req).filter(\Models.Event.isEnabled, .equal, true).all()
+      .flatMap { $0.map { $0.convertToPublic(on: req)}.flatten(on: req) }.map {
+        Models.Home(user: user, events: $0)
+    }
   }
 
 }

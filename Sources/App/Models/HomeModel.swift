@@ -8,7 +8,7 @@
 import FluentPostgreSQL
 import Vapor
 
-private let kCycleDateFormatter: DateFormatter = DateFormatter.farsiDateFormatter(with: "EEEE dd MMMM YYYY ساعت HH:mm")
+private let kCycleDateFormatter: DateFormatter = DateFormatter.farsiDateFormatter(with: "MMMM YY")
 
 extension Models {
 
