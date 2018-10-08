@@ -28,7 +28,7 @@ services:
   files:
     image: nginx
     ports: 
-      -80:80
+      - 80:80
     volumes:
       - ~/Avatars:/usr/share/nginx/html 
   redis:
