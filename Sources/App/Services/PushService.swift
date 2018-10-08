@@ -104,7 +104,7 @@ class PushService {
         }
 
         if !androidTokens.isEmpty {
-          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: true)
+          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: nil)
           notifications.append(notif)
         }
 
