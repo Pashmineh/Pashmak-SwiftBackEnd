@@ -37,8 +37,8 @@ class PushService {
 
       return users.compactMap { try? $0.devices.query(on: worker).all() }.flatMap(to: PushService.GORushMessage.self, on: worker) { devices in
         let devs = devices.flatMap { $0 }
-        let iOSTokens: [String] =  devs.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
-        let androidTokens: [String] = devs.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
+        let iOSTokens: [String] =  Array(Set(devs.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }))
+        let androidTokens: [String] = Array(Set(devs.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }))
 
         var notifications: [GORushMessage.Notification] = []
 
@@ -93,8 +93,8 @@ class PushService {
 
       return users.compactMap { try? $0.devices.query(on: worker).all() }.flatMap(to: PushService.GORushMessage.self, on: worker) { devices in
         let devs = devices.flatMap { $0 }
-        let iOSTokens: [String] =  devs.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
-        let androidTokens: [String] = devs.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }
+        let iOSTokens: [String] =  Array(Set(devs.filter { $0.platform == "IOS" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }))
+        let androidTokens: [String] = Array(Set(devs.filter { $0.platform == "ANDROID" && !$0.pushToken.isEmpty }.compactMap { $0.pushToken }))
 
         var notifications: [GORushMessage.Notification] = []
 
@@ -104,7 +104,7 @@ class PushService {
         }
 
         if !androidTokens.isEmpty {
-          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: true)
+          let notif = GORushMessage.Notification(tokens: androidTokens, platform: .android, message: nil, title: nil, priority: .high, topic: kTopic, data: data, alert: nil, notification: nil, content_available: nil)
           notifications.append(notif)
         }
 
