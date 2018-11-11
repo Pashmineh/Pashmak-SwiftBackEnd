@@ -81,7 +81,7 @@ extension DateFormatter {
   static func farsiDateFormatter(with dateFormat: String) -> DateFormatter {
     let dateFormatter = DateFormatter()
     dateFormatter.locale = Locale(identifier: "fa_IR")
-    dateFormatter.calendar = Calendar(identifier: Calendar.Identifier.persian)
+    dateFormatter.calendar = Calendar(identifier: Calendar.Identifier.gregorian)
     dateFormatter.timeZone = TimeZone(identifier: "Asia/Tehran")
     dateFormatter.timeStyle = .none
     dateFormatter.dateFormat = dateFormat
