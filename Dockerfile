@@ -2,6 +2,7 @@ FROM registry.kian.digital/swift:4.2.1-custom as builder
 RUN apt-get -qq update && apt-get -q -y install \
   tzdata \
   libblocksruntime-dev \
+  libicu-dev\
   && rm -r /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
